@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agendamento - Doceterapia</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400..700;1,400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body class="pagina-principal">
+
+  <main class="agenda">
+
+    <!-- HEADER -->
+    <div class="agenda__header">
+      <h1>Agenda de Pedidos</h1>
+      <div class="help-tag" id="btn_ajuda" title="Ajuda">
+        <i class="fa-solid fa-circle-question"></i>
+      </div>
+    </div>
+
+    <!-- FEED -->
+    <div class="agenda__feed-wrapper">
+
+      <div id="feed" class="feed scroll">
+
+        <div id="feed__empty" class="feed__empty">
+          <span class="feed__empty-icon"><i class="fa-solid fa-cake-candles"></i></span>
+          <strong>Nenhum pedido registrado ainda</strong>
+          <p>Clique no botão <strong>+</strong> abaixo para registrar seu primeiro pedido.</p>
+        </div>
+
+        <div id="feed__disconnected" class="feed__empty">
+          <span class="feed__empty-icon"><i class="fa-solid fa-plug-circle-xmark"></i></span>
+          <strong>Site desconectado</strong>
+          <p>Verifique o servidor de dados!</p>
+        </div>
+
+        <!-- CARD MOCK (exemplo de visualização de pedido) -->
+        <!-- <div class="card" id="card_mock">
+          <div class="card__accent-bar"></div>
+          <div class="card__body">
+            <div class="card__header">
+              <div class="card__meta">
+                <span class="card__cliente-nome">Ana Lima</span>
+                <span class="card__cliente-contato">📞 (11) 99876-5432</span>
+              </div>
+              <span class="card__data-badge">
+                <i class="fa-regular fa-calendar"></i>&nbsp;Entrega: 20/03/2025
+              </span>
+            </div>
+            <div class="card__divider"></div>
+            <div class="card__descricao">
+              2 bolos de chocolate belga com ganache, decoração floral em chantilly. Para festa de 30 pessoas.
+            </div>
+            <div class="card__footer">
+              <span class="card__valor">
+                <i class="fa-solid fa-tag"></i>&nbsp;R$ 280,00
+              </span>
+              <button class="card__edit-btn" id="btn_editMock">
+                <i class="fa-regular fa-pen-to-square"></i>&nbsp;Editar
+              </button>
+            </div>
+          </div>
+        </div> -->
+
+      </div>
+
+      <!-- FAB -->
+      <div class="fab">
+        <button id="btn_abrirFormulario" class="btn btn--icon" title="Registrar cliente ou pedido" aria-label="Abrir formulário">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- HELP DIALOG -->
+    <dialog id="agenda_help">
+      <div>
+        <i class="fa-solid fa-circle-xmark close-button" id="btn_fecharAjuda"></i>
+        <p class="frase-help">
+          Aqui você registra seus pedidos.<br><br>
+          Para começar, cadastre um cliente usando o botão <strong>+</strong> e depois registre cada pedido que ele fizer.
+        </p>
+      </div>
+    </dialog>
+
+    <!-- CONFIRM DIALOG -->
+    <dialog id="modal_confirma">
+      <div>
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:1.4rem;color:var(--color-accent)"></i>
+        <span id="text-aviso" style="font-size:0.82rem;color:var(--color-dark);text-align:center">
+          Você tem certeza que quer continuar com essa ação?
+        </span>
+        <span class="confirm-actions">
+          <button class="btn" id="button_confirma">Confirmar</button>
+          <button class="btn btn--secondary" id="btn_cancelarConfirma">Cancelar</button>
+        </span>
+      </div>
+    </dialog>
+
+  </main>
+
+  <!-- ============================================================
+       FORM MODAL (cadastrar cliente / registrar pedido)
+  ============================================================ -->
+  <div class="modal-overlay" id="modal_overlay" role="dialog" aria-modal="true" aria-labelledby="form_modal_title">
+    <div class="form-modal scroll">
+
+      <button class="form-modal__close" id="btn_fecharModal" aria-label="Fechar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="form-modal__heading">
+        <h2 class="form-modal__title" id="form_modal_title">Registrar na Agenda</h2>
+        <p class="form-modal__subtitle">Escolha o que deseja registrar abaixo.</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="form-steps" role="tablist">
+        <button class="form-steps__btn form-steps__btn--active" id="tab_livro" role="tab" aria-selected="true" aria-controls="secao_livro">
+          <i class="fa-solid fa-user-plus"></i>&nbsp;Novo Cliente
+        </button>
+        <button class="form-steps__btn" id="tab_leitura" role="tab" aria-selected="false" aria-controls="secao_leitura">
+          <i class="fa-solid fa-cake-candles"></i>&nbsp;Novo Pedido
+        </button>
+      </div>
+
+      <!-- ── Seção: Cadastrar Cliente ── -->
+      <div class="form-section form-section--active" id="secao_livro" role="tabpanel">
+
+        <div class="field">
+          <label class="field__label" for="ipt_nome">Nome completo <span class="field__required">*</span></label>
+          <input class="field__input" type="text" id="ipt_nome" placeholder="Ex.: Maria Fernanda" autocomplete="name" required />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="ipt_autor">Telefone / WhatsApp <span class="field__required">*</span></label>
+          <input class="field__input" type="tel" id="ipt_autor" placeholder="Ex.: (11) 99999-0000" autocomplete="tel" required />
+          <span class="field__hint">Use o número com DDD para facilitar o contato.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="ipt_paginas">Endereço de entrega <span class="field__required">*</span></label>
+          <input class="field__input" type="text" id="ipt_paginas" placeholder="Ex.: Rua das Flores, 42 – Bairro Jardim" autocomplete="street-address" required />
+          <span class="field__hint">Informe rua, número e bairro para facilitar a entrega.</span>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn--secondary" id="btn_cancelarLivro">Cancelar</button>
+          <button class="btn" id="ipt_enviarLivro">
+            <i class="fa-solid fa-floppy-disk"></i>&nbsp;Salvar Cliente
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ── Seção: Registrar Pedido ── -->
+      <div class="form-section" id="secao_leitura" role="tabpanel">
+
+        <div class="field">
+          <label class="field__label" for="ipt_livro">Cliente <span class="field__required">*</span></label>
+          <select class="field__select" id="ipt_livro" required>
+            <option value="">Selecione um cliente</option>
+          </select>
+          <span class="field__hint">Só aparecem clientes já cadastrados na agenda.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="ipt_comentario">Descrição do pedido <span class="field__required">*</span></label>
+          <textarea class="field__textarea" id="ipt_comentario" rows="4" maxlength="280"
+            placeholder="Ex.: 2 bolos de chocolate com ganache, decoração floral. Para 30 pessoas."></textarea>
+          <span class="field__char-count"><span id="char_count">0</span> / 280</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="ipt_dataOutraDate">Data de entrega <span class="field__required">*</span></label>
+          <input class="field__input" type="date" id="ipt_dataOutraDate" required />
+          <span class="field__hint">Informe a data combinada para a entrega do pedido.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="ipt_paginasLidas">Valor total (R$) <span class="field__required">*</span></label>
+          <input class="field__input" type="number" id="ipt_paginasLidas" placeholder="Ex.: 150.00" min="0" step="0.01" required />
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn--secondary" id="btn_cancelarLeitura">Cancelar</button>
+          <button class="btn" id="ipt_enviarLeitura">
+            <i class="fa-solid fa-floppy-disk"></i>&nbsp;Salvar Pedido
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================
+       EDIT MODAL
+  ============================================================ -->
+  <div class="edit-overlay" id="edit_overlay" role="dialog" aria-modal="true" aria-labelledby="edit_modal_title">
+    <div class="edit-modal scroll">
+
+      <button class="edit-modal__close" id="btn_fecharEdit" aria-label="Fechar edição">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <h2 class="edit-modal__title" id="edit_modal_title">Editar pedido</h2>
+
+      <div class="field">
+        <label class="field__label" for="edit_livro">Cliente</label>
+        <select class="field__select" id="edit_livro" required></select>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="edit_paginasLidas">Valor total (R$) <span class="field__required">*</span></label>
+        <input class="field__input" type="number" id="edit_paginasLidas" min="0" step="0.01" required />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="edit_dataOutraDate">Data de entrega</label>
+        <input class="field__input" type="date" id="edit_dataOutraDate" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="edit_comentario">Descrição do pedido</label>
+        <textarea class="field__textarea" id="edit_comentario" rows="4" maxlength="280"
+          placeholder="Descreva os detalhes do pedido..."></textarea>
+        <span class="field__char-count"><span id="edit_char_count">0</span> / 280</span>
+      </div>
+
+      <div class="edit-modal__actions">
+        <button class="btn btn--ghost-danger" id="btn_deletarLeitura">
+          <i class="fa-regular fa-trash-can"></i>&nbsp;Excluir pedido
+        </button>
+        <div class="edit-modal__actions-right">
+          <button class="btn btn--secondary" id="btn_cancelarEdit">Cancelar</button>
+          <button class="btn" id="btn_salvarEdit">
+            <i class="fa-solid fa-floppy-disk"></i>&nbsp;Salvar
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="./js/main.js" type="module"></script>
+</body>
+</html>
