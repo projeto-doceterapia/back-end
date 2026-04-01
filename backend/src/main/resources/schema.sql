@@ -1,6 +1,3 @@
-CREATE DATABASE IF NOT EXISTS agenda;
-USE agenda;
-
 CREATE TABLE cliente (
 	idCliente       INT           PRIMARY KEY AUTO_INCREMENT,
     nome_completo   VARCHAR(45)   NOT NULL,
