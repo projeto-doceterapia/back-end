@@ -1,71 +1,94 @@
-🍯 Doce Terapia – API REST (Back-end)
-Este repositório contém o núcleo lógico e a camada de persistência da Doce Terapia. A API foi desenvolvida para gerenciar de forma centralizada o cadastro de clientes, o fluxo de pedidos e a inteligência de estoque da doceria.
+# 🍬 Doce Terapia - API REST (Back-end)
 
-🚀 Tecnologias e Ferramentas
-Linguagem: Java 21
+![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring](https://img.shields.io/badge/spring-%236DB33F.svg?style=for-the-badge&logo=spring&logoColor=white)
+![MySQL](https://img.shields.io/badge/mysql-%2300f.svg?style=for-the-badge&logo=mysql&logoColor=white)
+![Swagger](https://img.shields.io/badge/-Swagger-%23C0E12F?style=for-the-badge&logo=swagger&logoColor=black)
 
-Framework: Spring Boot 3+
+Esta é a camada de inteligência e persistência do sistema **Doce Terapia**. A API foi desenvolvida seguindo o padrão arquitetural REST para gerenciar o ecossistema da doceria, focando em performance e organização de dados.
 
-Gerenciador de Dependências: Maven
+---
 
-Banco de Dados: MySQL (Persistência) / H2 (Testes)
+## 🛠️ Tecnologias Utilizadas
 
-Documentação: Swagger (OpenAPI 3)
+* **Linguagem:** Java 21
+* **Framework:** Spring Boot 3+
+* **Persistência de Dados:** Spring Data JPA / MySQL
+* **Documentação:** Swagger UI (OpenAPI 3.0)
+* **Gerenciador de Dependências:** Maven
 
-Arquitetura: REST
+## 📋 Funcionalidades do Backend
 
-🛠️ Funcionalidades Principais
-O backend expõe endpoints para as seguintes operações:
+A API centraliza as operações principais do negócio, divididas em dois pilares principais:
 
-Gestão de Clientes (CRUD): Cadastro, consulta, atualização e exclusão de clientes da doceria.
+### 1. Gestão de Clientes
+* **CRUD Completo:** Cadastro, listagem, atualização e exclusão de clientes.
+* **Validação de Dados:** Garantia de integridade para campos como e-mail e telefone.
 
-Controle de Pedidos: Registro de vendas, vinculação de itens e cálculo de status.
+### 2. Gestão de Pedidos
+* **Registro de Vendas:** Criação de novos pedidos vinculados a clientes.
+* **Fluxo de Status:** Controle do ciclo de vida do pedido (Pendente, Em Produção, Finalizado).
+* **Histórico:** Consulta de movimentações passadas para relatórios.
 
-Regras de Negócio: Validação de disponibilidade de estoque ao processar novos pedidos.
+---
 
-Documentação Automática: Interface interativa para testes de endpoints.
+## 📖 Documentação Interativa (Swagger)
 
-📖 Documentação da API (Swagger)
-A API utiliza o Swagger UI para facilitar o consumo pelo time de frontend e para testes manuais. Com a aplicação rodando, você pode acessar a documentação detalhada, esquemas de dados e testar as requisições em:
+A API conta com documentação automatizada, permitindo testar todos os endpoints em tempo real sem a necessidade de ferramentas externas como Postman.
 
-http://localhost:8080/swagger-ui/index.html
+Com a aplicação rodando, acesse:
+> [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
 
-⚙️ Configuração e Instalação
-Pré-requisitos
-JDK 21
+---
 
-Maven 3.8+
+## 🚀 Como Executar
 
-Instância MySQL ativa
+### Pré-requisitos
+* **JDK 21** ou superior instalado.
+* **Maven** configurado no PATH.
+* Instância do **MySQL** em execução.
 
-Instalação
-Clone o repositório:
+### Passos para Instalação
 
-Bash
-git clone https://github.com/seu-usuario/doce-terapia.git
-cd doce-terapia/back-end
-Configuração do Banco de Dados:
-Edite o arquivo src/main/resources/application.properties com as credenciais do seu ambiente local:
+1.  **Configuração do Banco de Dados:**
+    Crie um banco de dados chamado `db_doce_terapia` no seu MySQL.
 
-Properties
-spring.datasource.url=jdbc:mysql://localhost:3306/db_doce_terapia
-spring.datasource.username=seu_usuario
-spring.datasource.password=sua_senha
-spring.jpa.hibernate.ddl-auto=update
-Execução:
+2.  **Ajuste de Credenciais:**
+    No arquivo `src/main/resources/application.properties`, configure seu usuário e senha:
+    ```properties
+    spring.datasource.url=jdbc:mysql://localhost:3306/db_doce_terapia
+    spring.datasource.username=seu_usuario
+    spring.datasource.password=sua_senha
+    ```
 
-Bash
-mvn clean install
-mvn spring-boot:run
-📂 Estrutura de Pacotes
-controller/: Camada de exposição dos endpoints REST.
+3.  **Compilar e Rodar:**
+    ```bash
+    # Na raiz da pasta backend:
+    mvn clean install
+    mvn spring-boot:run
+    ```
 
-service/: Camada de regras de negócio e validações.
+---
 
-repository/: Interfaces de comunicação com o banco de dados (Spring Data JPA / JdbcTemplate).
+## 🛣️ Endpoints Principais
 
-model/: Entidades que representam as tabelas do banco de dados (Cliente, Pedido, Ingrediente).
+| Categoria | Método | Endpoint | Descrição |
+| :--- | :---: | :--- | :--- |
+| **Clientes** | `GET` | `/api/clientes` | Retorna todos os clientes |
+| **Clientes** | `POST` | `/api/clientes` | Cria um novo cliente |
+| **Clientes** | `DELETE` | `/api/clientes/{id}` | Remove um cliente por ID |
+| **Pedidos** | `GET` | `/api/pedidos` | Lista todos os pedidos |
+| **Pedidos** | `POST` | `/api/pedidos` | Registra um novo pedido |
+| **Pedidos** | `PUT` | `/api/pedidos/{id}` | Atualiza status do pedido |
 
-dto/: Objetos de transferência de dados para segurança e performance.
+---
 
-config/: Configurações de CORS, Swagger e Segurança.
+## 📂 Estrutura de Pastas
+
+```text
+src/main/java/br/com/doceterapia/
+├── controllers/    # Camada de entrada (Endpoints)
+├── models/         # Entidades (Tabelas do Banco)
+├── repositories/   # Interfaces de acesso a dados
+├── services/       # Regras de negócio
+└── dto/            # Objetos de transferência de dados
