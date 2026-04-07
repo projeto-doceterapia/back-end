@@ -73,8 +73,11 @@ Com a aplicação rodando, acesse:
 
 ```text
 src/main/java/br/com/doceterapia/
-├── controllers/    # Camada de entrada (Endpoints)
-├── models/         # Entidades (Tabelas do Banco)
-├── repositories/   # Interfaces de acesso a dados
-├── services/       # Regras de negócio
-└── dto/            # Objetos de transferência de dados
+├── config/        # Configurações do projeto (Swagger, CORS, etc.)
+├── controller/    # Endpoints da API (Entrada de requisições)
+├── dto/           # Objetos de Transferência de Dados (Request/Response)
+├── entity/        # Entidades JPA (Mapeamento das tabelas do banco)
+├── exception/     # Tratamento de erros e exceções customizadas
+├── mapper/        # Conversão entre Entidades e DTOs
+├── repository/    # Interface de comunicação com o banco de dados
+└── service/       # Regras de negócio da aplicação
