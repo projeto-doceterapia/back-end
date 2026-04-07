@@ -68,20 +68,6 @@ Com a aplicação rodando, acesse:
     mvn spring-boot:run
     ```
 
----
-
-## 🛣️ Endpoints Principais
-
-| Categoria | Método | Endpoint | Descrição |
-| :--- | :---: | :--- | :--- |
-| **Clientes** | `GET` | `/api/clientes` | Retorna todos os clientes |
-| **Clientes** | `POST` | `/api/clientes` | Cria um novo cliente |
-| **Clientes** | `DELETE` | `/api/clientes/{id}` | Remove um cliente por ID |
-| **Pedidos** | `GET` | `/api/pedidos` | Lista todos os pedidos |
-| **Pedidos** | `POST` | `/api/pedidos` | Registra um novo pedido |
-| **Pedidos** | `PUT` | `/api/pedidos/{id}` | Atualiza status do pedido |
-
----
 
 ## 📂 Estrutura de Pastas
 
