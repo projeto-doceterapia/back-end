@@ -6,4 +6,6 @@ import school.sptech.projetoindividual.entity.Cliente;
 public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
 
     Boolean existsByTelefone(String telefone);
+
+    Boolean existsByTelefoneAndIdClienteNot(String telefone, Integer idCliente);
 }
