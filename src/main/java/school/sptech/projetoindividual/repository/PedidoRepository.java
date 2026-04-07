@@ -2,7 +2,6 @@ package school.sptech.projetoindividual.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import school.sptech.projetoindividual.dto.PedidoWithClienteResponseDTO;
 import school.sptech.projetoindividual.entity.Pedido;
 
