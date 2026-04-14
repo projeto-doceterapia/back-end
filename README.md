@@ -80,4 +80,5 @@ src/main/java/br/com/doceterapia/
 ├── exception/     # Tratamento de erros e exceções customizadas
 ├── mapper/        # Conversão entre Entidades e DTOs
 ├── repository/    # Interface de comunicação com o banco de dados
-└── service/       # Regras de negócio da aplicação
+├── service/       # Regras de negócio da aplicação
+└── swagger/       # Interfaces para documentação Swagger
