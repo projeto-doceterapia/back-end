@@ -8,6 +8,7 @@ import school.sptech.projetoindividual.dto.ClienteRequestDTO;
 import school.sptech.projetoindividual.dto.ClienteResponseDTO;
 import school.sptech.projetoindividual.mapper.ClienteMapper;
 import school.sptech.projetoindividual.service.ClienteService;
+import school.sptech.projetoindividual.swagger.ClienteControllerOpenApi;
 
 import java.util.List;
 

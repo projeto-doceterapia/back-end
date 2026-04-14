@@ -10,6 +10,7 @@ import school.sptech.projetoindividual.dto.PedidoResponseDTO;
 import school.sptech.projetoindividual.dto.PedidoWithClienteResponseDTO;
 import school.sptech.projetoindividual.mapper.PedidoMapper;
 import school.sptech.projetoindividual.service.PedidoService;
+import school.sptech.projetoindividual.swagger.PedidoControllerOpenApi;
 
 import java.util.List;
 
