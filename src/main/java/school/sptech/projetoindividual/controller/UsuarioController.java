@@ -1,6 +1,5 @@
 package school.sptech.projetoindividual.controller;
 
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,13 +11,14 @@ import org.springframework.web.bind.annotation.*;
 import school.sptech.projetoindividual.dto.*;
 import school.sptech.projetoindividual.entity.Usuario;
 import school.sptech.projetoindividual.service.UsuarioService;
+import school.sptech.projetoindividual.swagger.UsuarioControllerOpenApi;
 
 import java.time.Duration;
 import java.util.List;
 
 @RestController
 @RequestMapping("/usuarios")
-public class UsuarioController {
+public class UsuarioController implements UsuarioControllerOpenApi {
 
     public static final String COOKIE_NOME = "authToken";
 
@@ -29,7 +29,7 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     @PostMapping
-    @SecurityRequirement(name = "Bearer")
+    @Override
     public ResponseEntity<Void> criar(@RequestBody @Valid UsuarioCriacaoDto usuarioCriacaoDto) {
         final Usuario novoUsuario = UsuarioMapper.of(usuarioCriacaoDto);
         this.usuarioService.criar(novoUsuario);
@@ -37,6 +37,7 @@ public class UsuarioController {
     }
 
     @PostMapping("/login")
+    @Override
     public ResponseEntity<UsuarioSessaoDto> login(
             @RequestBody UsuarioLoginDto usuarioLoginDto,
             HttpServletResponse response) {
@@ -59,6 +60,7 @@ public class UsuarioController {
     }
 
     @PostMapping("/logout")
+    @Override
     public ResponseEntity<Void> logout(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from(COOKIE_NOME, "")
                 .httpOnly(true)
@@ -73,7 +75,7 @@ public class UsuarioController {
     }
 
     @GetMapping
-    @SecurityRequirement(name = "Bearer")
+    @Override
     public ResponseEntity<List<UsuarioListarDto>> listarTodos() {
         List<UsuarioListarDto> usuarios = this.usuarioService.listarTodos();
 
