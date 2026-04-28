@@ -33,7 +33,6 @@ public interface UsuarioControllerOpenApi {
             @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    @SecurityRequirement(name = "Bearer")
     ResponseEntity<Void> criar(
             @RequestBody(description = "Dados do usuário a ser cadastrado", required = true,
                     content = @Content(schema = @Schema(implementation = UsuarioCriacaoDto.class)))
