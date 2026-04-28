@@ -51,8 +51,6 @@ public class SecurityConfiguracao {
             "/actuator/*",
             "/usuarios/login",
             "/usuarios/login/**",
-            "/usuarios/logout",
-            "/usuarios/logout/**",
             "/h2-console/**",
             "/h2-console/*/**",
             "/error/**"
@@ -67,6 +65,7 @@ public class SecurityConfiguracao {
                 .csrf(CsrfConfigurer<HttpSecurity>::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(URLS_PERMITIDAS).permitAll()
+                        .requestMatchers("/clientes/**", "/pedidos/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios").permitAll() // cadastro público
                         .anyRequest().authenticated()
                 )

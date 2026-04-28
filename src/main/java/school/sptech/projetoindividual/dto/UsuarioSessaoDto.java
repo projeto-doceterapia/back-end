@@ -5,6 +5,7 @@ public class UsuarioSessaoDto {
     private Long userId;
     private String nome;
     private String email;
+    private String token;
 
     public Long getUserId() {
         return userId;
@@ -28,5 +29,13 @@ public class UsuarioSessaoDto {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }

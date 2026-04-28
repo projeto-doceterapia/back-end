@@ -33,6 +33,7 @@ public class UsuarioMapper {
         dto.setUserId(tokenDto.getUserId());
         dto.setNome(tokenDto.getNome());
         dto.setEmail(tokenDto.getEmail());
+        dto.setToken(tokenDto.getToken());
         return dto;
     }
 

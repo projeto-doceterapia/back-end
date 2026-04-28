@@ -41,11 +41,11 @@ public interface UsuarioControllerOpenApi {
     @Operation(
             summary = "Autenticar usuário",
             description = "Valida as credenciais do usuário e emite um token JWT via cookie HttpOnly (`authToken`). " +
-                    "O token não é retornado no body — ele é enviado no header `Set-Cookie` e gerenciado " +
-                    "automaticamente pelo browser. Utilize o endpoint `/usuarios/logout` para encerrar a sessão."
+                    "O token também é retornado no body para facilitar testes no Swagger pelo botão `Authorize`. " +
+                    "Utilize o endpoint `/usuarios/logout` para encerrar a sessão."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso. Token enviado via cookie `Set-Cookie`.",
+            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso. Token enviado via cookie `Set-Cookie` e também retornado no body.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = UsuarioSessaoDto.class))),
             @ApiResponse(responseCode = "401", description = "Credenciais inválidas (e-mail ou senha incorretos)"),
@@ -59,13 +59,15 @@ public interface UsuarioControllerOpenApi {
 
     @Operation(
             summary = "Encerrar sessão",
-            description = "Invalida a sessão do usuário removendo o cookie `authToken` do browser (Max-Age=0). " +
+            description = "Invalida a sessão do usuário autenticado removendo o cookie `authToken` do browser (Max-Age=0). " +
                     "O token JWT permanece tecnicamente válido até expirar, por isso use tokens de curta duração em produção."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Logout realizado com sucesso. Cookie removido."),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
+    @SecurityRequirement(name = "Bearer")
     ResponseEntity<Void> logout(HttpServletResponse response);
 
     @Operation(
