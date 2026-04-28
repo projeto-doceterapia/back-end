@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 import school.sptech.projetoindividual.controller.UsuarioController;
@@ -85,13 +86,18 @@ public class AutenticacaoFilter extends OncePerRequestFilter {
     }
 
     private void registrarAutenticacaoNoContexto(HttpServletRequest request, String username, String jwtToken) {
-        UserDetails userDetails = autenticacaoService.loadUserByUsername(username);
+        try {
+            UserDetails userDetails = autenticacaoService.loadUserByUsername(username);
 
-        if (jwtTokenManager.validateToken(jwtToken, userDetails)) {
-            UsernamePasswordAuthenticationToken autenticacao = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-            autenticacao.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(autenticacao);
+            if (jwtTokenManager.validateToken(jwtToken, userDetails)) {
+                UsernamePasswordAuthenticationToken autenticacao = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                autenticacao.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(autenticacao);
+            }
+        } catch (UsernameNotFoundException e) {
+            // Ignora token de usuário que não existe mais e segue requisição sem autenticação.
+            LOGGER.warn("[AUTENTICACAO] Usuário do token não encontrado: {}", e.getMessage());
         }
     }
 }
