@@ -1,84 +1,114 @@
-# 🍬 Doce Terapia - API REST (Back-end)
+# Doce Terapia — API REST (Back-end)
 
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Spring](https://img.shields.io/badge/spring-%236DB33F.svg?style=for-the-badge&logo=spring&logoColor=white)
 ![MySQL](https://img.shields.io/badge/mysql-%2300f.svg?style=for-the-badge&logo=mysql&logoColor=white)
 ![Swagger](https://img.shields.io/badge/-Swagger-%23C0E12F?style=for-the-badge&logo=swagger&logoColor=black)
 
-Esta é a camada de inteligência e persistência do sistema **Doce Terapia**. A API foi desenvolvida seguindo o padrão arquitetural REST para gerenciar o ecossistema da doceria, focando em performance e organização de dados.
+API REST completa para gestao da doceria Doce Terapia. Gerencia clientes, produtos,
+insumos, pedidos, producao, pagamentos e notificacoes.
 
----
+## Tecnologias
 
-## 🛠️ Tecnologias Utilizadas
+- **Linguagem:** Java 21
+- **Framework:** Spring Boot 4.0
+- **Persistencia:** Spring Data JPA / H2 (dev) / MySQL (prod)
+- **Seguranca:** Spring Security + JWT (HMAC-SHA256)
+- **Documentacao:** Swagger UI (OpenAPI 3.0)
+- **Testes:** JUnit 5 + Mockito + JaCoCo
+- **Build:** Maven
 
-* **Linguagem:** Java 21
-* **Framework:** Spring Boot 3+
-* **Persistência de Dados:** Spring Data JPA / MySQL
-* **Documentação:** Swagger UI (OpenAPI 3.0)
-* **Gerenciador de Dependências:** Maven
+## Funcionalidades
 
-## 📋 Funcionalidades do Backend
+| Modulo | Entidades | Endpoints |
+|--------|-----------|-----------|
+| **Autenticacao** | Usuario | Login, cadastro |
+| **Clientes** | Cliente | CRUD completo |
+| **Produtos** | CategoriaProduto, Produto, ProdutoInsumo | CRUD completo, estoque por insumo |
+| **Insumos** | CategoriaInsumo, Insumo | CRUD completo, controle de quantidade |
+| **Pedidos** | Pedido, ItemPedido | CRUD + status machine + itens |
+| **Pagamentos** | Pagamento | Auto-criacao, sinal, restante |
+| **Cancelamentos** | CancelamentoPedido | Vinculado ao pedido |
+| **Producao** | Producao | CRUD + status machine |
+| **Notificacoes** | Notificacao, ConfiguracaoFarolAgenda | Agendamento e alertas |
 
-A API centraliza as operações principais do negócio, divididas em dois pilares principais:
+## Requisitos
 
-### 1. Gestão de Clientes
-* **CRUD Completo:** Cadastro, listagem, atualização e exclusão de clientes.
-* **Validação de Dados:** Garantia de integridade para campos como e-mail e telefone.
+- JDK 21
+- Maven (ou usar o wrapper `mvnw.cmd`)
+- MySQL 8+ (para producao)
 
-### 2. Gestão de Pedidos
-* **Registro de Vendas:** Criação de novos pedidos vinculados a clientes.
-* **Fluxo de Status:** Controle do ciclo de vida do pedido (Pendente, Em Produção, Finalizado).
-* **Histórico:** Consulta de movimentações passadas para relatórios.
+## Configuracao
 
----
+### Variaveis de ambiente (obrigatorias)
 
-## 📖 Documentação Interativa (Swagger)
+| Variavel | Descricao |
+|----------|-----------|
+| `JWT_SECRET` | Chave Base64 de no minimo 32 bytes para assinar tokens JWT |
 
-A API conta com documentação automatizada, permitindo testar todos os endpoints em tempo real sem a necessidade de ferramentas externas como Postman.
+### Variaveis de ambiente (opcionais)
 
-Com a aplicação rodando, acesse:
-> [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+| Variavel | Default | Descricao |
+|----------|---------|-----------|
+| `JWT_VALIDITY` | `3600` | Validade do token JWT em segundos |
 
----
+### Banco de dados
 
-## 🚀 Como Executar
+Em desenvolvimento (default): H2 em memoria, schema criado automaticamente.
 
-### Pré-requisitos
-* **JDK 21** ou superior instalado.
-* **Maven** configurado no PATH.
-* Instância do **MySQL** em execução.
+```properties
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console
+```
 
-### Passos para Instalação
+Para MySQL, sobrescreva em `application.properties` ou via variaveis:
 
-1.  **Configuração do Banco de Dados:**
-    Crie um banco de dados chamado `db_doce_terapia` no seu MySQL.
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/db_doce_terapia
+spring.datasource.username=seu_usuario
+spring.datasource.password=sua_senha
+spring.jpa.hibernate.ddl-auto=update
+```
 
-2.  **Ajuste de Credenciais:**
-    No arquivo `src/main/resources/application.properties`, configure seu usuário e senha:
-    ```properties
-    spring.datasource.url=jdbc:mysql://localhost:3306/db_doce_terapia
-    spring.datasource.username=seu_usuario
-    spring.datasource.password=sua_senha
-    ```
+## Execucao
 
-3.  **Compilar e Rodar:**
-    ```bash
-    # Na raiz da pasta backend:
-    mvn clean install
-    mvn spring-boot:run
-    ```
+```bash
+# Usando o wrapper (recomendado)
+./mvnw.cmd spring-boot:run
 
+# Ou com Maven instalado
+mvn spring-boot:run
+```
 
-## 📂 Estrutura de Pastas
+Acesse a API em `http://localhost:8080`.
 
-```text
+## Documentacao Swagger
+
+Com a aplicacao rodando:
+
+> http://localhost:8080/swagger-ui/index.html
+
+## Testes
+
+```bash
+./mvnw.cmd test
+```
+
+98 testes unitarios nos services (JUnit 5 + Mockito).
+
+## Estrutura
+
+```
 src/main/java/br/com/doceterapia/
-├── config/        # Configurações do projeto (Swagger, CORS, etc.)
-├── controller/    # Endpoints da API (Entrada de requisições)
-├── dto/           # Objetos de Transferência de Dados (Request/Response)
-├── entity/        # Entidades JPA (Mapeamento das tabelas do banco)
-├── exception/     # Tratamento de erros e exceções customizadas
-├── mapper/        # Conversão entre Entidades e DTOs
-├── repository/    # Interface de comunicação com o banco de dados
-├── service/       # Regras de negócio da aplicação
-└── swagger/       # Interfaces para documentação Swagger
+├── config/        # Seguranca, JWT, CORS, Swagger
+├── controller/    # Endpoints REST
+├── dto/           # Request/Response DTOs
+├── entity/        # Entidades JPA (14 tabelas)
+├── enums/         # Enums do dominio (13 tipos)
+├── exception/     # Excecoes customizadas
+├── mapper/        # Conversao Entity <-> DTO
+├── repository/    # Spring Data JPA
+├── service/       # Regras de negocio
+└── swagger/       # Interfaces OpenAPI
+```
