@@ -10,6 +10,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.com.doceterapia.api.dto.ClienteRequestDTO;
 import br.com.doceterapia.api.entity.Cliente;
+import br.com.doceterapia.api.enums.ClassificacaoCliente;
+import br.com.doceterapia.api.enums.StatusAtivo;
+import br.com.doceterapia.api.enums.TipoPessoa;
 import br.com.doceterapia.api.exception.ClienteIdDontExistsException;
 import br.com.doceterapia.api.exception.TelefoneAlreadyExistsException;
 import br.com.doceterapia.api.repository.ClienteRepository;
@@ -37,14 +40,20 @@ class ClienteServiceTest {
     void setUp() {
         cliente = new Cliente();
         cliente.setIdCliente(1);
-        cliente.setNomeCompleto("João Silva");
+        cliente.setNome("João Silva");
         cliente.setTelefone("(11) 98765-4321");
         cliente.setEndereco("Rua das Flores, 123");
+        cliente.setTipoPessoa(TipoPessoa.FISICA);
+        cliente.setClassificacaoCliente(ClassificacaoCliente.PADRAO);
+        cliente.setStatus(StatusAtivo.ATIVO);
 
         clienteRequestDTO = new ClienteRequestDTO();
-        clienteRequestDTO.setNomeCompleto("João Silva");
+        clienteRequestDTO.setNome("João Silva");
         clienteRequestDTO.setTelefone("(11) 98765-4321");
         clienteRequestDTO.setEndereco("Rua das Flores, 123");
+        clienteRequestDTO.setTipoPessoa(TipoPessoa.FISICA);
+        clienteRequestDTO.setClassificacaoCliente(ClassificacaoCliente.PADRAO);
+        clienteRequestDTO.setStatus(StatusAtivo.ATIVO);
     }
 
     @Test
@@ -53,7 +62,7 @@ class ClienteServiceTest {
         // Arrange
         Cliente cliente2 = new Cliente();
         cliente2.setIdCliente(2);
-        cliente2.setNomeCompleto("Maria Silva");
+        cliente2.setNome("Maria Silva");
         cliente2.setTelefone("(11) 87654-3210");
         cliente2.setEndereco("Rua das Plantas, 456");
 
@@ -65,8 +74,8 @@ class ClienteServiceTest {
         // Assert
         assertNotNull(resultado);
         assertEquals(2, resultado.size());
-        assertEquals("João Silva", resultado.get(0).getNomeCompleto());
-        assertEquals("Maria Silva", resultado.get(1).getNomeCompleto());
+        assertEquals("João Silva", resultado.get(0).getNome());
+        assertEquals("Maria Silva", resultado.get(1).getNome());
         verify(clienteRepository).findAll();
     }
 
@@ -97,7 +106,7 @@ class ClienteServiceTest {
 
         // Assert
         assertNotNull(resultado);
-        assertEquals("João Silva", resultado.getNomeCompleto());
+        assertEquals("João Silva", resultado.getNome());
         assertEquals("(11) 98765-4321", resultado.getTelefone());
         verify(clienteRepository).existsByTelefone(clienteRequestDTO.getTelefone());
         verify(clienteRepository).save(any(Cliente.class));

@@ -8,18 +8,26 @@ public class ClienteMapper{
 
     public static Cliente toCliente(ClienteRequestDTO dto) {
         Cliente cliente = new Cliente();
-        cliente.setNomeCompleto(dto.getNomeCompleto());
+        cliente.setNome(dto.getNome());
         cliente.setTelefone(dto.getTelefone());
         cliente.setEndereco(dto.getEndereco());
+        cliente.setTipoPessoa(dto.getTipoPessoa());
+        cliente.setClassificacaoCliente(dto.getClassificacaoCliente());
+        cliente.setStatus(dto.getStatus());
+        cliente.setObservacao(dto.getObservacao());
         return cliente;
     }
 
     public static ClienteResponseDTO toClienteResponse(Cliente cliente) {
         ClienteResponseDTO dto = new ClienteResponseDTO();
         dto.setIdCliente(cliente.getIdCliente());
-        dto.setNomeCompleto(cliente.getNomeCompleto());
+        dto.setNome(cliente.getNome());
         dto.setTelefone(cliente.getTelefone());
         dto.setEndereco(cliente.getEndereco());
+        dto.setTipoPessoa(cliente.getTipoPessoa());
+        dto.setClassificacaoCliente(cliente.getClassificacaoCliente());
+        dto.setStatus(cliente.getStatus());
+        dto.setObservacao(cliente.getObservacao());
         return dto;
     }
 }
