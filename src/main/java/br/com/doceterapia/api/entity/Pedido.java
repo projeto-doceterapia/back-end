@@ -1,11 +1,22 @@
 package br.com.doceterapia.api.entity;
 
+import br.com.doceterapia.api.enums.FormaEntrega;
+import br.com.doceterapia.api.enums.StatusPedido;
+import br.com.doceterapia.api.enums.TipoPedido;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 public class Pedido {
@@ -14,11 +25,37 @@ public class Pedido {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idPedido;
 
-    private Integer fkCliente;
-    private String descricao;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "fk_cliente", nullable = false)
+    private Cliente cliente;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    private TipoPedido tipoPedido;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30, nullable = false)
+    private StatusPedido statusPedido;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private FormaEntrega formaEntrega;
+
+    private String enderecoEntrega;
     private LocalDate dataEntrega;
-    private Double valor;
-    private Boolean statusConcluido;
+
+    @Column(columnDefinition = "TEXT")
+    private String anotacao;
+
+    private LocalDateTime dataCriacao;
+    private LocalDateTime dataConfirmacao;
+
+    @PrePersist
+    public void prePersist() {
+        if (dataCriacao == null) dataCriacao = LocalDateTime.now();
+        if (tipoPedido == null) tipoPedido = TipoPedido.ORCAMENTO;
+        if (statusPedido == null) statusPedido = StatusPedido.ORCAMENTO;
+    }
 
     public Integer getIdPedido() {
         return idPedido;
@@ -28,20 +65,44 @@ public class Pedido {
         this.idPedido = idPedido;
     }
 
-    public Integer getFkCliente() {
-        return fkCliente;
+    public Cliente getCliente() {
+        return cliente;
     }
 
-    public void setFkCliente(Integer fkCliente) {
-        this.fkCliente = fkCliente;
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
     }
 
-    public String getDescricao() {
-        return descricao;
+    public TipoPedido getTipoPedido() {
+        return tipoPedido;
     }
 
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
+    public void setTipoPedido(TipoPedido tipoPedido) {
+        this.tipoPedido = tipoPedido;
+    }
+
+    public StatusPedido getStatusPedido() {
+        return statusPedido;
+    }
+
+    public void setStatusPedido(StatusPedido statusPedido) {
+        this.statusPedido = statusPedido;
+    }
+
+    public FormaEntrega getFormaEntrega() {
+        return formaEntrega;
+    }
+
+    public void setFormaEntrega(FormaEntrega formaEntrega) {
+        this.formaEntrega = formaEntrega;
+    }
+
+    public String getEnderecoEntrega() {
+        return enderecoEntrega;
+    }
+
+    public void setEnderecoEntrega(String enderecoEntrega) {
+        this.enderecoEntrega = enderecoEntrega;
     }
 
     public LocalDate getDataEntrega() {
@@ -52,19 +113,27 @@ public class Pedido {
         this.dataEntrega = dataEntrega;
     }
 
-    public Double getValor() {
-        return valor;
+    public String getAnotacao() {
+        return anotacao;
     }
 
-    public void setValor(Double valor) {
-        this.valor = valor;
+    public void setAnotacao(String anotacao) {
+        this.anotacao = anotacao;
     }
 
-    public Boolean getStatusConcluido() {
-        return statusConcluido;
+    public LocalDateTime getDataCriacao() {
+        return dataCriacao;
     }
 
-    public void setStatusConcluido(Boolean statusConcluido) {
-        this.statusConcluido = statusConcluido;
+    public void setDataCriacao(LocalDateTime dataCriacao) {
+        this.dataCriacao = dataCriacao;
+    }
+
+    public LocalDateTime getDataConfirmacao() {
+        return dataConfirmacao;
+    }
+
+    public void setDataConfirmacao(LocalDateTime dataConfirmacao) {
+        this.dataConfirmacao = dataConfirmacao;
     }
 }

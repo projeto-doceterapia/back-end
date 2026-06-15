@@ -3,26 +3,45 @@ package br.com.doceterapia.api.mapper;
 import br.com.doceterapia.api.dto.PedidoRequestDTO;
 import br.com.doceterapia.api.dto.PedidoResponseDTO;
 import br.com.doceterapia.api.entity.Pedido;
+import br.com.doceterapia.api.exception.ClienteIdDontExistsException;
+import br.com.doceterapia.api.repository.ClienteRepository;
+import org.springframework.stereotype.Component;
 
+@Component
 public class PedidoMapper {
 
-    public static Pedido toPedido(PedidoRequestDTO request){
+    private final ClienteRepository clienteRepository;
+
+    public PedidoMapper(ClienteRepository clienteRepository) {
+        this.clienteRepository = clienteRepository;
+    }
+
+    public Pedido toPedido(PedidoRequestDTO dto) {
         Pedido pedido = new Pedido();
-        pedido.setFkCliente(request.getFkCliente());
-        pedido.setDescricao(request.getDescricao());
-        pedido.setDataEntrega(request.getDataEntrega());
-        pedido.setValor(request.getValor());
+        pedido.setCliente(clienteRepository.findById(dto.getClienteId())
+                .orElseThrow(ClienteIdDontExistsException::new));
+        pedido.setTipoPedido(dto.getTipoPedido());
+        pedido.setStatusPedido(dto.getStatusPedido());
+        pedido.setFormaEntrega(dto.getFormaEntrega());
+        pedido.setEnderecoEntrega(dto.getEnderecoEntrega());
+        pedido.setDataEntrega(dto.getDataEntrega());
+        pedido.setAnotacao(dto.getAnotacao());
         return pedido;
     }
 
-    public static PedidoResponseDTO toPedidoResponse(Pedido pedido) {
+    public PedidoResponseDTO toPedidoResponse(Pedido pedido) {
         PedidoResponseDTO response = new PedidoResponseDTO();
         response.setIdPedido(pedido.getIdPedido());
-        response.setFkCliente(pedido.getFkCliente());
-        response.setDescricao(pedido.getDescricao());
+        response.setClienteId(pedido.getCliente().getIdCliente());
+        response.setNomeCliente(pedido.getCliente().getNome());
+        response.setTipoPedido(pedido.getTipoPedido());
+        response.setStatusPedido(pedido.getStatusPedido());
+        response.setFormaEntrega(pedido.getFormaEntrega());
+        response.setEnderecoEntrega(pedido.getEnderecoEntrega());
         response.setDataEntrega(pedido.getDataEntrega());
-        response.setValor(pedido.getValor());
-        response.setStatusConcluido(pedido.getStatusConcluido());
+        response.setAnotacao(pedido.getAnotacao());
+        response.setDataCriacao(pedido.getDataCriacao());
+        response.setDataConfirmacao(pedido.getDataConfirmacao());
         return response;
     }
 }

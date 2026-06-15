@@ -9,9 +9,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.com.doceterapia.api.dto.PedidoRequestDTO;
-import br.com.doceterapia.api.dto.PedidoWithClienteResponseDTO;
+import br.com.doceterapia.api.dto.PedidoResponseDTO;
+import br.com.doceterapia.api.entity.Cliente;
 import br.com.doceterapia.api.entity.Pedido;
+import br.com.doceterapia.api.enums.FormaEntrega;
+import br.com.doceterapia.api.enums.StatusPedido;
+import br.com.doceterapia.api.enums.TipoPedido;
 import br.com.doceterapia.api.exception.PedidoIdDontExistsException;
+import br.com.doceterapia.api.mapper.PedidoMapper;
 import br.com.doceterapia.api.repository.PedidoRepository;
 
 import java.time.LocalDate;
@@ -29,87 +34,109 @@ class PedidoServiceTest {
     @Mock
     private PedidoRepository pedidoRepository;
 
+    @Mock
+    private PedidoMapper pedidoMapper;
+
+    @Mock
+    private PagamentoService pagamentoService;
+
     @InjectMocks
     private PedidoService pedidoService;
 
     private Pedido pedido;
     private PedidoRequestDTO pedidoRequestDTO;
+    private PedidoResponseDTO pedidoResponseDTO;
+    private Cliente cliente;
 
     @BeforeEach
     void setUp() {
+        cliente = new Cliente();
+        cliente.setIdCliente(1);
+
         pedido = new Pedido();
         pedido.setIdPedido(1);
-        pedido.setFkCliente(1);
-        pedido.setDescricao("Bolo de chocolate");
+        pedido.setCliente(cliente);
+        pedido.setTipoPedido(TipoPedido.ORCAMENTO);
+        pedido.setStatusPedido(StatusPedido.ORCAMENTO);
         pedido.setDataEntrega(LocalDate.of(2026, 5, 30));
-        pedido.setValor(150.0);
-        pedido.setStatusConcluido(false);
+        pedido.setAnotacao("Bolo de chocolate");
+
+        pedidoResponseDTO = new PedidoResponseDTO();
+        pedidoResponseDTO.setIdPedido(1);
+        pedidoResponseDTO.setClienteId(1);
 
         pedidoRequestDTO = new PedidoRequestDTO();
-        pedidoRequestDTO.setFkCliente(1);
-        pedidoRequestDTO.setDescricao("Bolo de chocolate");
+        pedidoRequestDTO.setClienteId(1);
+        pedidoRequestDTO.setTipoPedido(TipoPedido.ORCAMENTO);
+        pedidoRequestDTO.setStatusPedido(StatusPedido.ORCAMENTO);
         pedidoRequestDTO.setDataEntrega(LocalDate.of(2026, 5, 30));
-        pedidoRequestDTO.setValor(150.0);
+        pedidoRequestDTO.setAnotacao("Bolo de chocolate");
     }
 
     @Test
     @DisplayName("Deve listar todos os pedidos com cliente")
     void testListarTodos() {
         // Arrange
+        Cliente cliente2 = new Cliente();
+        cliente2.setIdCliente(2);
+
         Pedido pedido2 = new Pedido();
         pedido2.setIdPedido(2);
-        pedido2.setFkCliente(2);
-        pedido2.setDescricao("Torta de morango");
+        pedido2.setCliente(cliente2);
+        pedido2.setTipoPedido(TipoPedido.ORCAMENTO);
+        pedido2.setStatusPedido(StatusPedido.ORCAMENTO);
         pedido2.setDataEntrega(LocalDate.of(2026, 6, 1));
-        pedido2.setValor(200.0);
-        pedido2.setStatusConcluido(false);
 
-        List<PedidoWithClienteResponseDTO> pedidosResponse = List.of(
-                new PedidoWithClienteResponseDTO(1, 1, "Bolo de chocolate", LocalDate.of(2026, 5, 30), 150.0, false, 1, "João Silva", "(11) 98765-4321", "Rua das Flores, 123"),
-                new PedidoWithClienteResponseDTO(2, 2, "Torta de morango", LocalDate.of(2026, 6, 1), 200.0, false, 2, "Maria Silva", "(11) 87654-3210", "Rua das Plantas, 456")
-        );
+        PedidoResponseDTO dto2 = new PedidoResponseDTO();
+        dto2.setIdPedido(2);
+        dto2.setClienteId(2);
 
-        when(pedidoRepository.findAllWithCliente()).thenReturn(pedidosResponse);
+        List<Pedido> pedidos = List.of(pedido, pedido2);
+        when(pedidoRepository.findAllWithClienteEager()).thenReturn(pedidos);
+        when(pedidoMapper.toPedidoResponse(pedido)).thenReturn(pedidoResponseDTO);
+        when(pedidoMapper.toPedidoResponse(pedido2)).thenReturn(dto2);
 
         // Act
-        List<PedidoWithClienteResponseDTO> resultado = pedidoService.listarTodos();
+        List<PedidoResponseDTO> resultado = pedidoService.listarTodos();
 
         // Assert
         assertNotNull(resultado);
         assertEquals(2, resultado.size());
-        verify(pedidoRepository).findAllWithCliente();
+        verify(pedidoRepository).findAllWithClienteEager();
     }
 
     @Test
     @DisplayName("Deve retornar lista vazia quando não houver pedidos")
     void testListarTodosVazio() {
         // Arrange
-        when(pedidoRepository.findAllWithCliente()).thenReturn(List.of());
+        when(pedidoRepository.findAllWithClienteEager()).thenReturn(List.of());
 
         // Act
-        List<PedidoWithClienteResponseDTO> resultado = pedidoService.listarTodos();
+        List<PedidoResponseDTO> resultado = pedidoService.listarTodos();
 
         // Assert
         assertNotNull(resultado);
         assertTrue(resultado.isEmpty());
-        verify(pedidoRepository).findAllWithCliente();
+        verify(pedidoRepository).findAllWithClienteEager();
     }
 
     @Test
     @DisplayName("Deve cadastrar um novo pedido com sucesso")
     void testCadastrarPedido() {
         // Arrange
+        when(pedidoMapper.toPedido(pedidoRequestDTO)).thenReturn(pedido);
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+        when(pedidoMapper.toPedidoResponse(pedido)).thenReturn(pedidoResponseDTO);
 
         // Act
-        Pedido resultado = pedidoService.cadastrar(pedidoRequestDTO);
+        PedidoResponseDTO resultado = pedidoService.cadastrar(pedidoRequestDTO);
 
         // Assert
         assertNotNull(resultado);
-        assertEquals("Bolo de chocolate", resultado.getDescricao());
-        assertEquals(1, resultado.getFkCliente());
-        assertEquals(150.0, resultado.getValor());
+        assertEquals(1, resultado.getIdPedido());
+        verify(pedidoMapper).toPedido(pedidoRequestDTO);
         verify(pedidoRepository).save(any(Pedido.class));
+        verify(pedidoMapper).toPedidoResponse(pedido);
     }
 
     @Test
@@ -117,15 +144,18 @@ class PedidoServiceTest {
     void testAtualizarPedido() {
         // Arrange
         Integer idPedido = 1;
+        when(pedidoRepository.findById(idPedido)).thenReturn(Optional.of(pedido));
+        when(pedidoMapper.toPedido(pedidoRequestDTO)).thenReturn(pedido);
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+        when(pedidoMapper.toPedidoResponse(pedido)).thenReturn(pedidoResponseDTO);
 
         // Act
-        Pedido resultado = pedidoService.atualizar(idPedido, pedidoRequestDTO);
+        PedidoResponseDTO resultado = pedidoService.atualizar(idPedido, pedidoRequestDTO);
 
         // Assert
         assertNotNull(resultado);
         assertEquals(idPedido, resultado.getIdPedido());
-        assertEquals("Bolo de chocolate", resultado.getDescricao());
+        verify(pedidoRepository).findById(idPedido);
         verify(pedidoRepository).save(any(Pedido.class));
     }
 
@@ -134,11 +164,13 @@ class PedidoServiceTest {
     void testDeletarPedido() {
         // Arrange
         Integer idPedido = 1;
+        when(pedidoRepository.existsById(idPedido)).thenReturn(true);
 
         // Act
         pedidoService.deletar(idPedido);
 
         // Assert
+        verify(pedidoRepository).existsById(idPedido);
         verify(pedidoRepository).deleteById(idPedido);
     }
 
@@ -147,15 +179,18 @@ class PedidoServiceTest {
     void testAtualizarStatusPedido() {
         // Arrange
         Integer idPedido = 1;
-        Boolean novoStatus = true;
+        StatusPedido novoStatus = StatusPedido.AGUARDANDO_SINAL;
 
+        pedido.setStatusPedido(StatusPedido.ORCAMENTO);
         when(pedidoRepository.findById(idPedido)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+        when(pedidoMapper.toPedidoResponse(pedido)).thenReturn(pedidoResponseDTO);
 
         // Act
-        pedidoService.atualizarStatus(idPedido, novoStatus);
+        PedidoResponseDTO resultado = pedidoService.atualizarStatus(idPedido, novoStatus);
 
         // Assert
+        assertNotNull(resultado);
         verify(pedidoRepository).findById(idPedido);
         verify(pedidoRepository).save(any(Pedido.class));
     }
@@ -165,7 +200,7 @@ class PedidoServiceTest {
     void testAtualizarStatusPedidoInexistente() {
         // Arrange
         Integer idPedido = 999;
-        Boolean novoStatus = true;
+        StatusPedido novoStatus = StatusPedido.AGUARDANDO_SINAL;
 
         when(pedidoRepository.findById(idPedido)).thenReturn(Optional.empty());
 
@@ -179,47 +214,43 @@ class PedidoServiceTest {
     }
 
     @Test
-    @DisplayName("Deve atualizar status para true (pedido concluído)")
+    @DisplayName("Deve atualizar status para AGUARDANDO_SINAL")
     void testAtualizarStatusParaConcluido() {
         // Arrange
         Integer idPedido = 1;
-        Boolean statusConcluido = true;
-        Pedido pedidoAtualizado = new Pedido();
-        pedidoAtualizado.setIdPedido(idPedido);
-        pedidoAtualizado.setStatusConcluido(statusConcluido);
+        StatusPedido novoStatus = StatusPedido.AGUARDANDO_SINAL;
 
+        pedido.setStatusPedido(StatusPedido.ORCAMENTO);
         when(pedidoRepository.findById(idPedido)).thenReturn(Optional.of(pedido));
-        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedidoAtualizado);
+        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+        when(pedidoMapper.toPedidoResponse(pedido)).thenReturn(pedidoResponseDTO);
 
         // Act
-        pedidoService.atualizarStatus(idPedido, statusConcluido);
+        PedidoResponseDTO resultado = pedidoService.atualizarStatus(idPedido, novoStatus);
 
         // Assert
+        assertNotNull(resultado);
         verify(pedidoRepository).findById(idPedido);
         verify(pedidoRepository).save(any(Pedido.class));
-        assertTrue(pedidoAtualizado.getStatusConcluido());
+        assertEquals(StatusPedido.AGUARDANDO_SINAL, pedido.getStatusPedido());
     }
 
     @Test
-    @DisplayName("Deve atualizar status para false (pedido não concluído)")
+    @DisplayName("Deve lançar exceção ao atualizar status com transição inválida")
     void testAtualizarStatusParaNaoConcluido() {
         // Arrange
         Integer idPedido = 1;
-        pedido.setStatusConcluido(true);
-        Boolean statusNaoConcluido = false;
-        Pedido pedidoAtualizado = new Pedido();
-        pedidoAtualizado.setIdPedido(idPedido);
-        pedidoAtualizado.setStatusConcluido(statusNaoConcluido);
+        StatusPedido transicaoInvalida = StatusPedido.ENTREGUE;
 
+        pedido.setStatusPedido(StatusPedido.ORCAMENTO);
         when(pedidoRepository.findById(idPedido)).thenReturn(Optional.of(pedido));
-        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedidoAtualizado);
 
-        // Act
-        pedidoService.atualizarStatus(idPedido, statusNaoConcluido);
+        // Act & Assert
+        assertThrows(br.com.doceterapia.api.exception.StatusTransitionInvalidException.class, () -> {
+            pedidoService.atualizarStatus(idPedido, transicaoInvalida);
+        });
 
-        // Assert
         verify(pedidoRepository).findById(idPedido);
-        verify(pedidoRepository).save(any(Pedido.class));
-        assertFalse(pedidoAtualizado.getStatusConcluido());
+        verify(pedidoRepository, never()).save(any());
     }
 }

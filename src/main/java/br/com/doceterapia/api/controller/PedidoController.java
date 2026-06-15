@@ -1,14 +1,12 @@
 package br.com.doceterapia.api.controller;
 
-
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import br.com.doceterapia.api.dto.PedidoRequestDTO;
 import br.com.doceterapia.api.dto.PedidoResponseDTO;
-import br.com.doceterapia.api.dto.PedidoWithClienteResponseDTO;
-import br.com.doceterapia.api.mapper.PedidoMapper;
+import br.com.doceterapia.api.enums.StatusPedido;
 import br.com.doceterapia.api.service.PedidoService;
 import br.com.doceterapia.api.swagger.PedidoControllerOpenApi;
 
@@ -29,13 +27,12 @@ public class PedidoController implements PedidoControllerOpenApi {
     @Override
     public ResponseEntity<PedidoResponseDTO> cadastrarPedido(
             @Valid @org.springframework.web.bind.annotation.RequestBody PedidoRequestDTO request) {
-        PedidoResponseDTO response = PedidoMapper.toPedidoResponse(service.cadastrar(request));
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.cadastrar(request));
     }
 
     @GetMapping
     @Override
-    public ResponseEntity<List<PedidoWithClienteResponseDTO>> listarPedidos() {
+    public ResponseEntity<List<PedidoResponseDTO>> listarPedidos() {
         return ResponseEntity.ok(service.listarTodos());
     }
 
@@ -44,8 +41,7 @@ public class PedidoController implements PedidoControllerOpenApi {
     public ResponseEntity<PedidoResponseDTO> atualizarPedido(
             @PathVariable Integer id,
             @Valid @org.springframework.web.bind.annotation.RequestBody PedidoRequestDTO request) {
-        PedidoResponseDTO response = PedidoMapper.toPedidoResponse(service.atualizar(id, request));
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.OK).body(service.atualizar(id, request));
     }
 
     @DeleteMapping("/{id}")
@@ -56,12 +52,11 @@ public class PedidoController implements PedidoControllerOpenApi {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @PatchMapping("/status")
+    @PatchMapping("/{id}/status")
     @Override
-    public ResponseEntity<Void> atualizarStatus(
-            @RequestParam Integer id,
-            @RequestParam Boolean status) {
-        service.atualizarStatus(id, status);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<PedidoResponseDTO> atualizarStatus(
+            @PathVariable Integer id,
+            @RequestParam StatusPedido statusPedido) {
+        return ResponseEntity.ok(service.atualizarStatus(id, statusPedido));
     }
 }
