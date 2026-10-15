@@ -40,6 +40,11 @@ USER spring:spring
 # Size the JVM heap from the container memory limit instead of the host.
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
 
+# Default to the production profile so a plain run reads its config from the
+# environment instead of falling back to in-memory H2 and the dev secret.
+# Select the local profile explicitly for development.
+ENV SPRING_PROFILES_ACTIVE=prod
+
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
