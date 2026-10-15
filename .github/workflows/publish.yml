@@ -42,6 +42,7 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
 
+      # A newly published GHCR package is private. After the first publish, set its visibility to public once under Package settings; GITHUB_TOKEN cannot change it.
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
