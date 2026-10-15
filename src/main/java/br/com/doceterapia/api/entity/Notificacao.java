@@ -1,5 +1,6 @@
 package br.com.doceterapia.api.entity;
 
+import br.com.doceterapia.api.enums.StatusEnvioNotificacao;
 import br.com.doceterapia.api.enums.TipoNotificacao;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,10 +12,19 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Table(
+    name = "notificacao",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uq_notificacao_chave_unicidade",
+        columnNames = "chave_unicidade"
+    )
+)
 public class Notificacao {
 
     @Id
@@ -36,6 +46,28 @@ public class Notificacao {
 
     @Column(nullable = false)
     private Boolean lida = false;
+
+    @Column(length = 150)
+    private String chaveUnicidade;
+
+    private LocalDateTime janelaInicio;
+
+    private LocalDateTime janelaFim;
+
+    @Column(length = 80)
+    private String templateKey;
+
+    @Column(columnDefinition = "TEXT")
+    private String parametros;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    private StatusEnvioNotificacao statusEnvio = StatusEnvioNotificacao.NAO_ENVIAR;
+
+    private LocalDateTime enviadoEm;
+
+    @Column(length = 120)
+    private String canalMessageId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "fk_pedido")
@@ -91,6 +123,70 @@ public class Notificacao {
 
     public void setLida(Boolean lida) {
         this.lida = lida;
+    }
+
+    public String getChaveUnicidade() {
+        return chaveUnicidade;
+    }
+
+    public void setChaveUnicidade(String chaveUnicidade) {
+        this.chaveUnicidade = chaveUnicidade;
+    }
+
+    public LocalDateTime getJanelaInicio() {
+        return janelaInicio;
+    }
+
+    public void setJanelaInicio(LocalDateTime janelaInicio) {
+        this.janelaInicio = janelaInicio;
+    }
+
+    public LocalDateTime getJanelaFim() {
+        return janelaFim;
+    }
+
+    public void setJanelaFim(LocalDateTime janelaFim) {
+        this.janelaFim = janelaFim;
+    }
+
+    public String getTemplateKey() {
+        return templateKey;
+    }
+
+    public void setTemplateKey(String templateKey) {
+        this.templateKey = templateKey;
+    }
+
+    public String getParametros() {
+        return parametros;
+    }
+
+    public void setParametros(String parametros) {
+        this.parametros = parametros;
+    }
+
+    public StatusEnvioNotificacao getStatusEnvio() {
+        return statusEnvio;
+    }
+
+    public void setStatusEnvio(StatusEnvioNotificacao statusEnvio) {
+        this.statusEnvio = statusEnvio;
+    }
+
+    public LocalDateTime getEnviadoEm() {
+        return enviadoEm;
+    }
+
+    public void setEnviadoEm(LocalDateTime enviadoEm) {
+        this.enviadoEm = enviadoEm;
+    }
+
+    public String getCanalMessageId() {
+        return canalMessageId;
+    }
+
+    public void setCanalMessageId(String canalMessageId) {
+        this.canalMessageId = canalMessageId;
     }
 
     public Pedido getPedido() {
