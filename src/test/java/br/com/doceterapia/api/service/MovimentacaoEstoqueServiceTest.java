@@ -48,6 +48,7 @@ class MovimentacaoEstoqueServiceTest {
     private EntityManager entityManager;
 
     private final ConversaoUnidadeService conversaoUnidadeService = new ConversaoUnidadeService();
+    private final ChaveNotaFiscalValidator chaveNotaFiscalValidator = new ChaveNotaFiscalValidator();
 
     // Runs each TransactionTemplate callback inline without a real transaction;
     // exceptions still propagate so rollback-based behavior is preserved.
@@ -72,8 +73,8 @@ class MovimentacaoEstoqueServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new MovimentacaoEstoqueService(repository, conversaoUnidadeService, entityManager,
-                transactionManager);
+        service = new MovimentacaoEstoqueService(repository, conversaoUnidadeService, chaveNotaFiscalValidator,
+                entityManager, transactionManager);
 
         insumoKg = new Insumo();
         insumoKg.setIdInsumo(1);

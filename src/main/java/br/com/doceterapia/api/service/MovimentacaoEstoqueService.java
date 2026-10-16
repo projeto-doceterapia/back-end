@@ -8,6 +8,7 @@ import br.com.doceterapia.api.enums.TipoMovimentacao;
 import br.com.doceterapia.api.enums.UnidadeMedida;
 import br.com.doceterapia.api.exception.ChaveIdempotenciaConflitanteException;
 import br.com.doceterapia.api.exception.InsumoInativoException;
+import br.com.doceterapia.api.exception.MovimentacaoInvalidaException;
 import br.com.doceterapia.api.repository.MovimentacaoEstoqueRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -38,16 +39,19 @@ public class MovimentacaoEstoqueService {
 
     private final MovimentacaoEstoqueRepository repository;
     private final ConversaoUnidadeService conversaoUnidadeService;
+    private final ChaveNotaFiscalValidator chaveNotaFiscalValidator;
     private final EntityManager entityManager;
     private final TransactionTemplate transacao;
     private final TransactionTemplate transacaoNova;
 
     public MovimentacaoEstoqueService(MovimentacaoEstoqueRepository repository,
                                       ConversaoUnidadeService conversaoUnidadeService,
+                                      ChaveNotaFiscalValidator chaveNotaFiscalValidator,
                                       EntityManager entityManager,
                                       PlatformTransactionManager transactionManager) {
         this.repository = repository;
         this.conversaoUnidadeService = conversaoUnidadeService;
+        this.chaveNotaFiscalValidator = chaveNotaFiscalValidator;
         this.entityManager = entityManager;
         this.transacao = new TransactionTemplate(transactionManager);
         this.transacaoNova = new TransactionTemplate(transactionManager);
@@ -63,6 +67,7 @@ public class MovimentacaoEstoqueService {
      * marked rollback-only.
      */
     public ResultadoMovimentacao registrarEntradaCompra(EntradaCompra comando) {
+        validarConteudo(comando);
         String hash = calcularHash(comando);
 
         try {
@@ -98,6 +103,15 @@ public class MovimentacaoEstoqueService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Chave de idempotência violou a restrição única mas não foi encontrada"));
         return resolverDuplicada(existente, hash);
+    }
+
+    /**
+     * Movement history of a supply, newest first, optionally filtered by an
+     * occurrence date range.
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<MovimentacaoEstoque> listarHistorico(Integer insumoId, LocalDateTime de, LocalDateTime ate) {
+        return repository.buscarHistorico(insumoId, de, ate);
     }
 
     /**
@@ -185,6 +199,27 @@ public class MovimentacaoEstoqueService {
             throw new ChaveIdempotenciaConflitanteException();
         }
         return new ResultadoMovimentacao(existente, true);
+    }
+
+    private void validarConteudo(EntradaCompra comando) {
+        if (comando.insumoId() == null) {
+            throw new MovimentacaoInvalidaException("O id do insumo é obrigatório");
+        }
+        if (comando.origem() == null) {
+            throw new MovimentacaoInvalidaException("A origem é obrigatória");
+        }
+        if (comando.quantidadeInformada() == null || comando.quantidadeInformada().signum() <= 0) {
+            throw new MovimentacaoInvalidaException("A quantidade informada deve ser maior que zero");
+        }
+        if (comando.unidadeInformada() == null) {
+            throw new MovimentacaoInvalidaException("A unidade informada é obrigatória");
+        }
+        if (comando.valorLiquido() != null && comando.valorLiquido().signum() < 0) {
+            throw new MovimentacaoInvalidaException("O valor líquido não pode ser negativo");
+        }
+        if (comando.chaveNota() != null && !chaveNotaFiscalValidator.isValida(comando.chaveNota())) {
+            throw new MovimentacaoInvalidaException("A chave da nota fiscal é inválida");
+        }
     }
 
     private BigDecimal calcularCustoUnitario(BigDecimal valorLiquido, BigDecimal quantidadeConvertida) {
