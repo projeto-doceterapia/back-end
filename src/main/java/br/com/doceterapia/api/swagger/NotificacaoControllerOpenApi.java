@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import br.com.doceterapia.api.dto.NotificacaoRequestDTO;
 import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
 
@@ -104,4 +105,16 @@ public interface NotificacaoControllerOpenApi {
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     ResponseEntity<List<NotificacaoResponseDTO>> listarNotificacoesNaoLidas();
+
+    @Operation(summary = "Stream de notificações em tempo real",
+            description = "Abre uma conexão Server-Sent Events que envia o evento 'notificacao' "
+                    + "(com o mesmo corpo de /nao-lidas) quando uma notificação é criada e o evento "
+                    + "'lida' ({\"id\": n}) quando uma é marcada como lida, sempre após o commit. "
+                    + "Um comentário ': ping' é enviado periodicamente como keep-alive.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Conexão de stream aberta",
+                    content = @Content(mediaType = "text/event-stream")),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    SseEmitter streamNotificacoes();
 }

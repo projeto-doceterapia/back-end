@@ -3,10 +3,14 @@ package br.com.doceterapia.api.service;
 import br.com.doceterapia.api.dto.NotificacaoRequestDTO;
 import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
 import br.com.doceterapia.api.entity.Notificacao;
+import br.com.doceterapia.api.event.NotificacaoCriadaEvent;
+import br.com.doceterapia.api.event.NotificacaoLidaEvent;
 import br.com.doceterapia.api.exception.NotificacaoNotFoundException;
 import br.com.doceterapia.api.mapper.NotificacaoMapper;
 import br.com.doceterapia.api.repository.NotificacaoRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,16 +19,22 @@ public class NotificacaoService {
 
     private final NotificacaoRepository repository;
     private final NotificacaoMapper mapper;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public NotificacaoService(NotificacaoRepository repository, NotificacaoMapper mapper) {
+    public NotificacaoService(NotificacaoRepository repository, NotificacaoMapper mapper,
+                              ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.mapper = mapper;
+        this.eventPublisher = eventPublisher;
     }
 
+    @Transactional
     public NotificacaoResponseDTO cadastrar(NotificacaoRequestDTO request) {
         Notificacao entity = mapper.toEntity(request);
         repository.save(entity);
-        return mapper.toResponseDTO(entity);
+        NotificacaoResponseDTO response = mapper.toResponseDTO(entity);
+        eventPublisher.publishEvent(new NotificacaoCriadaEvent(response));
+        return response;
     }
 
     public List<NotificacaoResponseDTO> listarTodas() {
@@ -55,11 +65,13 @@ public class NotificacaoService {
         repository.deleteById(id);
     }
 
+    @Transactional
     public NotificacaoResponseDTO marcarLida(Integer id) {
         Notificacao entity = repository.findById(id)
                 .orElseThrow(NotificacaoNotFoundException::new);
         entity.setLida(true);
         repository.save(entity);
+        eventPublisher.publishEvent(new NotificacaoLidaEvent(entity.getIdNotificacao()));
         return mapper.toResponseDTO(entity);
     }
 
