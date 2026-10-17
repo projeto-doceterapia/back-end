@@ -5,6 +5,7 @@ import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
 import br.com.doceterapia.api.entity.Insumo;
 import br.com.doceterapia.api.entity.Notificacao;
 import br.com.doceterapia.api.entity.Pedido;
+import br.com.doceterapia.api.enums.StatusEnvioNotificacao;
 import br.com.doceterapia.api.exception.InsumoIdDontExistsException;
 import br.com.doceterapia.api.exception.PedidoIdDontExistsException;
 import br.com.doceterapia.api.repository.InsumoRepository;
@@ -31,6 +32,9 @@ public class NotificacaoMapper {
         entity.setMensagem(dto.getMensagem());
         entity.setDataCriacao(LocalDateTime.now());
         entity.setLida(false);
+        // Manually created notifications are in-app only: they are never scheduled
+        // for WhatsApp delivery, so the delivery agenda must skip them.
+        entity.setStatusEnvio(StatusEnvioNotificacao.NAO_ENVIAR);
 
         if (dto.getFkPedido() != null) {
             Pedido pedido = pedidoRepository.findById(dto.getFkPedido())
@@ -57,6 +61,13 @@ public class NotificacaoMapper {
         dto.setLida(entity.getLida());
         dto.setFkPedido(entity.getPedido() != null ? entity.getPedido().getIdPedido() : null);
         dto.setFkInsumo(entity.getInsumo() != null ? entity.getInsumo().getIdInsumo() : null);
+        dto.setStatusEnvio(entity.getStatusEnvio());
+        dto.setJanelaInicio(entity.getJanelaInicio());
+        dto.setJanelaFim(entity.getJanelaFim());
+        dto.setTemplateKey(entity.getTemplateKey());
+        dto.setParametros(entity.getParametros());
+        dto.setEnviadoEm(entity.getEnviadoEm());
+        dto.setCanalMessageId(entity.getCanalMessageId());
         return dto;
     }
 }
