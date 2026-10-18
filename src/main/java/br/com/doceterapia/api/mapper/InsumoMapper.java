@@ -2,19 +2,23 @@ package br.com.doceterapia.api.mapper;
 
 import br.com.doceterapia.api.dto.InsumoRequestDTO;
 import br.com.doceterapia.api.dto.InsumoResponseDTO;
+import br.com.doceterapia.api.dto.InsumoCatalogoItemDTO;
 import br.com.doceterapia.api.entity.CategoriaInsumo;
 import br.com.doceterapia.api.entity.Insumo;
 import br.com.doceterapia.api.enums.StatusAtivo;
 import br.com.doceterapia.api.repository.CategoriaInsumoRepository;
+import br.com.doceterapia.api.service.NomeNormalizador;
 import org.springframework.stereotype.Component;
 
 @Component
 public class InsumoMapper {
 
     private final CategoriaInsumoRepository categoriaInsumoRepository;
+    private final NomeNormalizador nomeNormalizador;
 
-    public InsumoMapper(CategoriaInsumoRepository categoriaInsumoRepository) {
+    public InsumoMapper(CategoriaInsumoRepository categoriaInsumoRepository, NomeNormalizador nomeNormalizador) {
         this.categoriaInsumoRepository = categoriaInsumoRepository;
+        this.nomeNormalizador = nomeNormalizador;
     }
 
     public Insumo toEntity(InsumoRequestDTO request) {
@@ -26,6 +30,7 @@ public class InsumoMapper {
 
         entity.setCategoria(categoria);
         entity.setNome(request.getNome());
+        entity.setNomeNormalizado(nomeNormalizador.normalizar(request.getNome()));
         entity.setQuantidadeAtual(request.getQuantidadeAtual());
         entity.setQuantidadeMinima(request.getQuantidadeMinima());
         entity.setUnidade(request.getUnidade());
@@ -50,5 +55,9 @@ public class InsumoMapper {
         dto.setMarca(entity.getMarca());
         dto.setCustoUnitario(entity.getCustoUnitario());
         return dto;
+    }
+
+    public InsumoCatalogoItemDTO toCatalogoItemDTO(Insumo entity) {
+        return new InsumoCatalogoItemDTO(entity.getIdInsumo(), entity.getNome(), entity.getUnidade());
     }
 }

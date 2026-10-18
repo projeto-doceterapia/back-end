@@ -9,6 +9,7 @@ import br.com.doceterapia.api.enums.StatusAtivo;
 import br.com.doceterapia.api.enums.UnidadeMedida;
 import br.com.doceterapia.api.exception.InsumoHasMovimentacoesException;
 import br.com.doceterapia.api.mapper.InsumoMapper;
+import br.com.doceterapia.api.service.InsumoCatalogoService;
 import br.com.doceterapia.api.service.InsumoService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,9 @@ class InsumoControllerTest {
 
     @MockitoBean
     private InsumoService service;
+
+    @MockitoBean
+    private InsumoCatalogoService catalogoService;
 
     @MockitoBean
     private InsumoMapper insumoMapper;
