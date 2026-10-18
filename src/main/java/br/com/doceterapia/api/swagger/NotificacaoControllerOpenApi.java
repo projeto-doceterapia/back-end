@@ -10,9 +10,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import br.com.doceterapia.api.dto.ConfirmacaoEnvioRequestDTO;
+import br.com.doceterapia.api.dto.NotificacaoAgendaResponseDTO;
 import br.com.doceterapia.api.dto.NotificacaoRequestDTO;
 import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Tag(name = "Notificação", description = "Endpoints para gerenciamento de notificações")
@@ -117,4 +120,37 @@ public interface NotificacaoControllerOpenApi {
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     SseEmitter streamNotificacoes();
+
+    @Operation(summary = "Listar agenda de entrega",
+            description = "Retorna as notificações pendentes de entrega cuja janela se sobrepõe ao intervalo informado. "
+                    + "Notificações apenas internas (NAO_ENVIAR) ou já confirmadas não aparecem.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Agenda retornada com sucesso",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = NotificacaoAgendaResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Parâmetros de data inválidos"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    ResponseEntity<List<NotificacaoAgendaResponseDTO>> listarAgenda(
+            @Parameter(description = "Início do intervalo (ISO date-time)", example = "2026-06-14T00:00:00")
+            LocalDateTime de,
+            @Parameter(description = "Fim do intervalo (ISO date-time)", example = "2026-06-14T23:59:59")
+            LocalDateTime ate);
+
+    @Operation(summary = "Confirmar envio de notificação",
+            description = "Registra o resultado do envio (ENVIADA ou FALHA), o horário e o id da mensagem no canal. "
+                    + "É idempotente: uma notificação já confirmada mantém a primeira confirmação.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Confirmação registrada com sucesso",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = NotificacaoResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Status de envio inválido"),
+            @ApiResponse(responseCode = "404", description = "Notificação não encontrada"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    ResponseEntity<NotificacaoResponseDTO> confirmarEnvio(
+            @Parameter(description = "ID da notificação", example = "1") Integer id,
+            @RequestBody(description = "Resultado do envio", required = true,
+                    content = @Content(schema = @Schema(implementation = ConfirmacaoEnvioRequestDTO.class)))
+            ConfirmacaoEnvioRequestDTO request);
 }

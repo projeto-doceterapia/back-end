@@ -2,6 +2,7 @@ package br.com.doceterapia.api.mapper;
 
 import br.com.doceterapia.api.dto.NotificacaoRequestDTO;
 import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
+import br.com.doceterapia.api.dto.NotificacaoAgendaResponseDTO;
 import br.com.doceterapia.api.entity.Insumo;
 import br.com.doceterapia.api.entity.Notificacao;
 import br.com.doceterapia.api.entity.Pedido;
@@ -68,6 +69,16 @@ public class NotificacaoMapper {
         dto.setParametros(entity.getParametros());
         dto.setEnviadoEm(entity.getEnviadoEm());
         dto.setCanalMessageId(entity.getCanalMessageId());
+        return dto;
+    }
+
+    public NotificacaoAgendaResponseDTO toAgendaResponseDTO(Notificacao entity) {
+        NotificacaoAgendaResponseDTO dto = new NotificacaoAgendaResponseDTO();
+        dto.setIdNotificacao(entity.getIdNotificacao());
+        dto.setJanelaInicio(entity.getJanelaInicio());
+        dto.setJanelaFim(entity.getJanelaFim());
+        dto.setTemplateKey(entity.getTemplateKey());
+        dto.setParametros(entity.getParametros());
         return dto;
     }
 }

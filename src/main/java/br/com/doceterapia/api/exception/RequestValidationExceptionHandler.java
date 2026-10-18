@@ -49,6 +49,12 @@ public class RequestValidationExceptionHandler {
         return construir(HttpStatus.BAD_REQUEST, message, request);
     }
 
+    @ExceptionHandler(ConfiguracaoNotificacaoInvalidaException.class)
+    public ResponseEntity<Map<String, Object>> handleConfiguracaoInvalida(
+            ConfiguracaoNotificacaoInvalidaException ex, HttpServletRequest request) {
+        return construir(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
+    }
+
     private String mensagemValorEnumInvalido(InvalidFormatException invalid) {
         String valor = String.valueOf(invalid.getValue());
         String aceitos = Arrays.stream(invalid.getTargetType().getEnumConstants())

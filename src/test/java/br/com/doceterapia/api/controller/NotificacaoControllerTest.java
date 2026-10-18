@@ -1,9 +1,11 @@
 package br.com.doceterapia.api.controller;
 
+import br.com.doceterapia.api.dto.NotificacaoAgendaResponseDTO;
 import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
 import br.com.doceterapia.api.enums.StatusEnvioNotificacao;
 import br.com.doceterapia.api.enums.TipoNotificacao;
 import br.com.doceterapia.api.exception.RequestValidationExceptionHandler;
+import br.com.doceterapia.api.service.NotificacaoEmitterRegistry;
 import br.com.doceterapia.api.service.NotificacaoService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -45,6 +48,9 @@ class NotificacaoControllerTest {
 
     @MockitoBean
     private NotificacaoService service;
+
+    @MockitoBean
+    private NotificacaoEmitterRegistry emitterRegistry;
 
     @Test
     @DisplayName("Deve cadastrar notificação com tipo permitido e retornar 201")
@@ -110,5 +116,46 @@ class NotificacaoControllerTest {
         mockMvc.perform(patch("/notificacoes/3/marcar-lida"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.lida").value(true));
+    }
+
+    @Test
+    @DisplayName("GET /agenda deve retornar itens pendentes no intervalo")
+    void deveListarAgenda() throws Exception {
+        NotificacaoAgendaResponseDTO item = new NotificacaoAgendaResponseDTO();
+        item.setIdNotificacao(10);
+        item.setJanelaInicio(LocalDateTime.of(2026, 10, 21, 8, 0));
+        item.setJanelaFim(LocalDateTime.of(2026, 10, 21, 8, 2));
+        item.setTemplateKey("estoque_baixo");
+        item.setParametros("{\"insumo\":\"Farinha\"}");
+        when(service.listarAgenda(any(), any())).thenReturn(List.of(item));
+
+        mockMvc.perform(get("/notificacoes/agenda")
+                        .param("de", "2026-10-21T00:00:00")
+                        .param("ate", "2026-10-21T23:59:59"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].idNotificacao").value(10))
+                .andExpect(jsonPath("$[0].templateKey").value("estoque_baixo"))
+                .andExpect(jsonPath("$[0].janelaInicio").value("2026-10-21T08:00:00"));
+    }
+
+    @Test
+    @DisplayName("POST /confirmacao-envio deve registrar o envio")
+    void deveConfirmarEnvio() throws Exception {
+        NotificacaoResponseDTO response = new NotificacaoResponseDTO();
+        response.setIdNotificacao(10);
+        response.setStatusEnvio(StatusEnvioNotificacao.ENVIADA);
+        response.setCanalMessageId("wamid.1");
+        when(service.confirmarEnvio(eq(10), any())).thenReturn(response);
+
+        String body = """
+                {"statusEnvio":"ENVIADA","canalMessageId":"wamid.1"}
+                """;
+
+        mockMvc.perform(post("/notificacoes/10/confirmacao-envio")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusEnvio").value("ENVIADA"))
+                .andExpect(jsonPath("$.canalMessageId").value("wamid.1"));
     }
 }
