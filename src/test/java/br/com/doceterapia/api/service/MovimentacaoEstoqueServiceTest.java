@@ -47,6 +47,9 @@ class MovimentacaoEstoqueServiceTest {
     @Mock
     private EntityManager entityManager;
 
+    @Mock
+    private br.com.doceterapia.api.service.notificacao.AlertaEstoqueBaixoService alertaEstoqueBaixoService;
+
     private final ConversaoUnidadeService conversaoUnidadeService = new ConversaoUnidadeService();
     private final ChaveNotaFiscalValidator chaveNotaFiscalValidator = new ChaveNotaFiscalValidator();
 
@@ -74,7 +77,7 @@ class MovimentacaoEstoqueServiceTest {
     @BeforeEach
     void setUp() {
         service = new MovimentacaoEstoqueService(repository, conversaoUnidadeService, chaveNotaFiscalValidator,
-                entityManager, transactionManager);
+                entityManager, alertaEstoqueBaixoService, transactionManager);
 
         insumoKg = new Insumo();
         insumoKg.setIdInsumo(1);

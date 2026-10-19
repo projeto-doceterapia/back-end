@@ -10,6 +10,7 @@ import br.com.doceterapia.api.exception.ChaveIdempotenciaConflitanteException;
 import br.com.doceterapia.api.exception.InsumoInativoException;
 import br.com.doceterapia.api.exception.MovimentacaoInvalidaException;
 import br.com.doceterapia.api.repository.MovimentacaoEstoqueRepository;
+import br.com.doceterapia.api.service.notificacao.AlertaEstoqueBaixoService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -41,6 +42,7 @@ public class MovimentacaoEstoqueService {
     private final ConversaoUnidadeService conversaoUnidadeService;
     private final ChaveNotaFiscalValidator chaveNotaFiscalValidator;
     private final EntityManager entityManager;
+    private final AlertaEstoqueBaixoService alertaEstoqueBaixoService;
     private final TransactionTemplate transacao;
     private final TransactionTemplate transacaoNova;
 
@@ -48,11 +50,13 @@ public class MovimentacaoEstoqueService {
                                       ConversaoUnidadeService conversaoUnidadeService,
                                       ChaveNotaFiscalValidator chaveNotaFiscalValidator,
                                       EntityManager entityManager,
+                                      AlertaEstoqueBaixoService alertaEstoqueBaixoService,
                                       PlatformTransactionManager transactionManager) {
         this.repository = repository;
         this.conversaoUnidadeService = conversaoUnidadeService;
         this.chaveNotaFiscalValidator = chaveNotaFiscalValidator;
         this.entityManager = entityManager;
+        this.alertaEstoqueBaixoService = alertaEstoqueBaixoService;
         this.transacao = new TransactionTemplate(transactionManager);
         this.transacaoNova = new TransactionTemplate(transactionManager);
         this.transacaoNova.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -168,14 +172,17 @@ public class MovimentacaoEstoqueService {
     private void aplicarMovimentacao(Insumo insumo, MovimentacaoEstoque movimentacao, BigDecimal custoNovo) {
         entityManager.lock(insumo, LockModeType.PESSIMISTIC_WRITE);
 
-        BigDecimal saldoAtual = insumo.getQuantidadeAtual() != null ? insumo.getQuantidadeAtual() : BigDecimal.ZERO;
-        insumo.setQuantidadeAtual(saldoAtual.add(movimentacao.getQuantidade()));
+        BigDecimal saldoAnterior = insumo.getQuantidadeAtual() != null ? insumo.getQuantidadeAtual() : BigDecimal.ZERO;
+        BigDecimal saldoNovo = saldoAnterior.add(movimentacao.getQuantidade());
+        insumo.setQuantidadeAtual(saldoNovo);
 
         if (custoNovo != null) {
             insumo.setCustoUnitario(custoNovo);
         }
 
         repository.saveAndFlush(movimentacao);
+
+        alertaEstoqueBaixoService.avaliar(insumo, saldoAnterior, saldoNovo);
     }
 
     private Insumo carregarInsumoAtivoComLock(Integer insumoId) {
