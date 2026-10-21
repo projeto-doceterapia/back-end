@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
+@Table(name = "insumo", indexes = @Index(name = "idx_insumo_nome_normalizado", columnList = "nome_normalizado"))
 public class Insumo {
 
     @Id
@@ -17,6 +18,11 @@ public class Insumo {
     private CategoriaInsumo categoria;
 
     private String nome;
+
+    // Populated by the catalog/get-or-create logic (task 3.1). Kept nullable so
+    // existing insumos created before that logic exists do not break validation.
+    @Column(length = 120)
+    private String nomeNormalizado;
 
     @Column(precision = 10, scale = 3)
     private BigDecimal quantidadeAtual;
@@ -57,6 +63,14 @@ public class Insumo {
 
     public void setNome(String nome) {
         this.nome = nome;
+    }
+
+    public String getNomeNormalizado() {
+        return nomeNormalizado;
+    }
+
+    public void setNomeNormalizado(String nomeNormalizado) {
+        this.nomeNormalizado = nomeNormalizado;
     }
 
     public BigDecimal getQuantidadeAtual() {

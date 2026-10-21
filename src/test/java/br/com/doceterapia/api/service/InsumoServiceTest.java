@@ -14,16 +14,20 @@ import br.com.doceterapia.api.entity.Insumo;
 import br.com.doceterapia.api.enums.StatusAtivo;
 import br.com.doceterapia.api.enums.UnidadeMedida;
 import br.com.doceterapia.api.exception.CategoriaInsumoIdDontExistsException;
+import br.com.doceterapia.api.exception.InsumoHasMovimentacoesException;
 import br.com.doceterapia.api.exception.InsumoIdDontExistsException;
 import br.com.doceterapia.api.mapper.InsumoMapper;
 import br.com.doceterapia.api.repository.CategoriaInsumoRepository;
 import br.com.doceterapia.api.repository.InsumoRepository;
+import br.com.doceterapia.api.repository.MovimentacaoEstoqueRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +42,12 @@ class InsumoServiceTest {
 
     @Mock
     private InsumoMapper insumoMapper;
+
+    @Mock
+    private MovimentacaoEstoqueService movimentacaoEstoqueService;
+
+    @Mock
+    private MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
 
     @InjectMocks
     private InsumoService insumoService;
@@ -74,24 +84,14 @@ class InsumoServiceTest {
     @Test
     @DisplayName("Deve listar todos os insumos")
     void testListarTodos() {
-        // Arrange
         Insumo insumo2 = new Insumo();
         insumo2.setIdInsumo(2);
-        insumo2.setCategoria(categoriaInsumo);
         insumo2.setNome("Açúcar refinado");
-        insumo2.setQuantidadeAtual(BigDecimal.valueOf(20.0));
-        insumo2.setQuantidadeMinima(BigDecimal.valueOf(5.0));
-        insumo2.setUnidade(UnidadeMedida.KG);
-        insumo2.setStatus(StatusAtivo.ATIVO);
-        insumo2.setMarca("União");
 
         when(insumoRepository.findAll()).thenReturn(List.of(insumo, insumo2));
 
-        // Act
         List<Insumo> resultado = insumoService.listarTodos();
 
-        // Assert
-        assertNotNull(resultado);
         assertEquals(2, resultado.size());
         assertEquals("Farinha de trigo", resultado.get(0).getNome());
         assertEquals("Açúcar refinado", resultado.get(1).getNome());
@@ -101,121 +101,132 @@ class InsumoServiceTest {
     @Test
     @DisplayName("Deve retornar lista vazia quando não houver insumos")
     void testListarTodosVazio() {
-        // Arrange
         when(insumoRepository.findAll()).thenReturn(List.of());
 
-        // Act
         List<Insumo> resultado = insumoService.listarTodos();
 
-        // Assert
-        assertNotNull(resultado);
         assertTrue(resultado.isEmpty());
         verify(insumoRepository).findAll();
     }
 
     @Test
-    @DisplayName("Deve cadastrar um novo insumo com sucesso")
-    void testCadastrar() {
-        // Arrange
-        when(categoriaInsumoRepository.existsById(insumoRequestDTO.getFkCategoriaInsumo())).thenReturn(true);
-        when(insumoMapper.toEntity(insumoRequestDTO)).thenReturn(insumo);
-        when(insumoRepository.save(any(Insumo.class))).thenReturn(insumo);
+    @DisplayName("Deve cadastrar insumo com saldo inicial através da movimentação")
+    void testCadastrarComSaldoInicial() {
+        Insumo novo = new Insumo();
+        novo.setQuantidadeAtual(BigDecimal.valueOf(10.5));
+        when(categoriaInsumoRepository.existsById(1)).thenReturn(true);
+        when(insumoMapper.toEntity(insumoRequestDTO)).thenReturn(novo);
 
-        // Act
-        Insumo resultado = insumoService.cadastrar(insumoRequestDTO);
+        insumoService.cadastrar(insumoRequestDTO);
 
-        // Assert
-        assertNotNull(resultado);
-        assertEquals("Farinha de trigo", resultado.getNome());
-        assertEquals(BigDecimal.valueOf(10.5), resultado.getQuantidadeAtual());
-        assertEquals(BigDecimal.valueOf(2.0), resultado.getQuantidadeMinima());
-        assertEquals(UnidadeMedida.KG, resultado.getUnidade());
-        assertEquals(StatusAtivo.ATIVO, resultado.getStatus());
-        assertEquals("Dona Benta", resultado.getMarca());
-        verify(categoriaInsumoRepository).existsById(insumoRequestDTO.getFkCategoriaInsumo());
-        verify(insumoRepository).save(any(Insumo.class));
+        // balance is driven by the movement service, not written directly
+        assertEquals(0, BigDecimal.ZERO.compareTo(novo.getQuantidadeAtual()));
+        verify(insumoRepository).save(novo);
+        verify(movimentacaoEstoqueService).registrarSaldoInicial(eq(novo), eq(BigDecimal.valueOf(10.5)));
+    }
+
+    @Test
+    @DisplayName("Não deve criar saldo inicial quando a quantidade é zero")
+    void testCadastrarSemSaldoInicial() {
+        Insumo novo = new Insumo();
+        novo.setQuantidadeAtual(BigDecimal.ZERO);
+        when(categoriaInsumoRepository.existsById(1)).thenReturn(true);
+        when(insumoMapper.toEntity(insumoRequestDTO)).thenReturn(novo);
+
+        insumoService.cadastrar(insumoRequestDTO);
+
+        verify(insumoRepository).save(novo);
+        verify(movimentacaoEstoqueService, never()).registrarSaldoInicial(any(), any());
     }
 
     @Test
     @DisplayName("Deve lançar exceção ao cadastrar insumo com categoria inexistente")
     void testCadastrarCategoriaInexistente() {
-        // Arrange
-        when(categoriaInsumoRepository.existsById(insumoRequestDTO.getFkCategoriaInsumo())).thenReturn(false);
+        when(categoriaInsumoRepository.existsById(1)).thenReturn(false);
 
-        // Act & Assert
-        assertThrows(CategoriaInsumoIdDontExistsException.class, () -> {
-            insumoService.cadastrar(insumoRequestDTO);
-        });
+        assertThrows(CategoriaInsumoIdDontExistsException.class, () -> insumoService.cadastrar(insumoRequestDTO));
 
-        verify(categoriaInsumoRepository).existsById(insumoRequestDTO.getFkCategoriaInsumo());
         verify(insumoRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("Deve atualizar insumo com sucesso")
-    void testAtualizar() {
-        // Arrange
-        Integer id = 1;
-        when(insumoRepository.existsById(id)).thenReturn(true);
-        when(categoriaInsumoRepository.existsById(insumoRequestDTO.getFkCategoriaInsumo())).thenReturn(true);
-        when(insumoMapper.toEntity(insumoRequestDTO)).thenReturn(insumo);
-        when(insumoRepository.save(any(Insumo.class))).thenReturn(insumo);
+    @DisplayName("Deve pedir o ajuste para a quantidade alvo ao atualizar")
+    void testAtualizarComAjuste() {
+        insumo.setQuantidadeAtual(BigDecimal.valueOf(10));
+        insumoRequestDTO.setQuantidadeAtual(BigDecimal.valueOf(7));
 
-        // Act
-        Insumo resultado = insumoService.atualizar(id, insumoRequestDTO);
+        Insumo dados = new Insumo();
+        dados.setCategoria(categoriaInsumo);
+        dados.setNome("Farinha de trigo");
+        dados.setQuantidadeMinima(BigDecimal.valueOf(2.0));
+        dados.setUnidade(UnidadeMedida.KG);
+        dados.setStatus(StatusAtivo.ATIVO);
 
-        // Assert
-        assertNotNull(resultado);
-        assertEquals(id, resultado.getIdInsumo());
-        verify(insumoRepository).existsById(id);
-        verify(categoriaInsumoRepository).existsById(insumoRequestDTO.getFkCategoriaInsumo());
-        verify(insumoRepository).save(any(Insumo.class));
+        when(insumoRepository.findById(1)).thenReturn(Optional.of(insumo));
+        when(categoriaInsumoRepository.existsById(1)).thenReturn(true);
+        when(insumoMapper.toEntity(insumoRequestDTO)).thenReturn(dados);
+
+        insumoService.atualizar(1, insumoRequestDTO);
+
+        verify(movimentacaoEstoqueService).registrarAjusteParaAlvo(eq(insumo), eq(BigDecimal.valueOf(7)));
+        verify(insumoRepository).save(insumo);
+    }
+
+    @Test
+    @DisplayName("Deve delegar o ajuste mesmo quando a quantidade não muda")
+    void testAtualizarSemMudancaDeQuantidade() {
+        insumo.setQuantidadeAtual(BigDecimal.valueOf(10));
+        insumoRequestDTO.setQuantidadeAtual(BigDecimal.valueOf(10));
+
+        when(insumoRepository.findById(1)).thenReturn(Optional.of(insumo));
+        when(categoriaInsumoRepository.existsById(1)).thenReturn(true);
+        when(insumoMapper.toEntity(insumoRequestDTO)).thenReturn(new Insumo());
+
+        insumoService.atualizar(1, insumoRequestDTO);
+
+        verify(movimentacaoEstoqueService).registrarAjusteParaAlvo(eq(insumo), eq(BigDecimal.valueOf(10)));
+        verify(insumoRepository).save(insumo);
     }
 
     @Test
     @DisplayName("Deve lançar exceção ao atualizar insumo inexistente")
     void testAtualizarInexistente() {
-        // Arrange
-        Integer id = 999;
-        when(insumoRepository.existsById(id)).thenReturn(false);
+        when(insumoRepository.findById(999)).thenReturn(Optional.empty());
 
-        // Act & Assert
-        assertThrows(InsumoIdDontExistsException.class, () -> {
-            insumoService.atualizar(id, insumoRequestDTO);
-        });
+        assertThrows(InsumoIdDontExistsException.class, () -> insumoService.atualizar(999, insumoRequestDTO));
 
-        verify(insumoRepository).existsById(id);
         verify(insumoRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("Deve deletar insumo com sucesso")
-    void testDeletar() {
-        // Arrange
-        Integer id = 1;
-        when(insumoRepository.existsById(id)).thenReturn(true);
+    @DisplayName("Deve deletar insumo sem movimentações")
+    void testDeletarSemMovimentacoes() {
+        when(insumoRepository.existsById(1)).thenReturn(true);
+        when(movimentacaoEstoqueRepository.existsByInsumoIdInsumo(1)).thenReturn(false);
 
-        // Act
-        insumoService.deletar(id);
+        insumoService.deletar(1);
 
-        // Assert
-        verify(insumoRepository).existsById(id);
-        verify(insumoRepository).deleteById(id);
+        verify(insumoRepository).deleteById(1);
+    }
+
+    @Test
+    @DisplayName("Deve bloquear a exclusão de insumo com movimentações (409)")
+    void testDeletarComMovimentacoes() {
+        when(insumoRepository.existsById(1)).thenReturn(true);
+        when(movimentacaoEstoqueRepository.existsByInsumoIdInsumo(1)).thenReturn(true);
+
+        assertThrows(InsumoHasMovimentacoesException.class, () -> insumoService.deletar(1));
+
+        verify(insumoRepository, never()).deleteById(any());
     }
 
     @Test
     @DisplayName("Deve lançar exceção ao deletar insumo inexistente")
     void testDeletarInexistente() {
-        // Arrange
-        Integer id = 999;
-        when(insumoRepository.existsById(id)).thenReturn(false);
+        when(insumoRepository.existsById(999)).thenReturn(false);
 
-        // Act & Assert
-        assertThrows(InsumoIdDontExistsException.class, () -> {
-            insumoService.deletar(id);
-        });
+        assertThrows(InsumoIdDontExistsException.class, () -> insumoService.deletar(999));
 
-        verify(insumoRepository).existsById(id);
         verify(insumoRepository, never()).deleteById(any());
     }
 }

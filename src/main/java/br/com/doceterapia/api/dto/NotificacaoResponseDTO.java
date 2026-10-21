@@ -1,6 +1,7 @@
 package br.com.doceterapia.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import br.com.doceterapia.api.enums.StatusEnvioNotificacao;
 import br.com.doceterapia.api.enums.TipoNotificacao;
 
 import java.time.LocalDateTime;
@@ -31,6 +32,27 @@ public class NotificacaoResponseDTO {
 
     @Schema(description = "ID do insumo relacionado (opcional)", example = "1")
     private Integer fkInsumo;
+
+    @Schema(description = "Status de envio da notificação ao WhatsApp", example = "NAO_ENVIAR")
+    private StatusEnvioNotificacao statusEnvio;
+
+    @Schema(description = "Início da janela de entrega", example = "2026-06-14T08:00:00")
+    private LocalDateTime janelaInicio;
+
+    @Schema(description = "Fim da janela de entrega", example = "2026-06-14T08:10:00")
+    private LocalDateTime janelaFim;
+
+    @Schema(description = "Chave do template de mensagem", example = "estoque_baixo")
+    private String templateKey;
+
+    @Schema(description = "Parâmetros do template em JSON", example = "{\"insumo\":\"Farinha\"}")
+    private String parametros;
+
+    @Schema(description = "Momento em que a notificação foi enviada", example = "2026-06-14T08:05:00")
+    private LocalDateTime enviadoEm;
+
+    @Schema(description = "ID da mensagem no canal de envio", example = "wamid.ABC123")
+    private String canalMessageId;
 
     public Integer getIdNotificacao() {
         return idNotificacao;
@@ -94,5 +116,61 @@ public class NotificacaoResponseDTO {
 
     public void setFkInsumo(Integer fkInsumo) {
         this.fkInsumo = fkInsumo;
+    }
+
+    public StatusEnvioNotificacao getStatusEnvio() {
+        return statusEnvio;
+    }
+
+    public void setStatusEnvio(StatusEnvioNotificacao statusEnvio) {
+        this.statusEnvio = statusEnvio;
+    }
+
+    public LocalDateTime getJanelaInicio() {
+        return janelaInicio;
+    }
+
+    public void setJanelaInicio(LocalDateTime janelaInicio) {
+        this.janelaInicio = janelaInicio;
+    }
+
+    public LocalDateTime getJanelaFim() {
+        return janelaFim;
+    }
+
+    public void setJanelaFim(LocalDateTime janelaFim) {
+        this.janelaFim = janelaFim;
+    }
+
+    public String getTemplateKey() {
+        return templateKey;
+    }
+
+    public void setTemplateKey(String templateKey) {
+        this.templateKey = templateKey;
+    }
+
+    public String getParametros() {
+        return parametros;
+    }
+
+    public void setParametros(String parametros) {
+        this.parametros = parametros;
+    }
+
+    public LocalDateTime getEnviadoEm() {
+        return enviadoEm;
+    }
+
+    public void setEnviadoEm(LocalDateTime enviadoEm) {
+        this.enviadoEm = enviadoEm;
+    }
+
+    public String getCanalMessageId() {
+        return canalMessageId;
+    }
+
+    public void setCanalMessageId(String canalMessageId) {
+        this.canalMessageId = canalMessageId;
     }
 }

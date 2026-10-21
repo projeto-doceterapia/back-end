@@ -2,6 +2,7 @@ package br.com.doceterapia.api.service;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import br.com.doceterapia.api.dto.PedidoRequestDTO;
 import br.com.doceterapia.api.dto.PedidoResponseDTO;
@@ -13,6 +14,7 @@ import br.com.doceterapia.api.exception.PedidoIdDontExistsException;
 import br.com.doceterapia.api.exception.StatusTransitionInvalidException;
 import br.com.doceterapia.api.mapper.PedidoMapper;
 import br.com.doceterapia.api.repository.PedidoRepository;
+import br.com.doceterapia.api.service.notificacao.AlertaDiaLotadoService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,6 +28,7 @@ public class PedidoService {
     private final PedidoRepository repository;
     private final PedidoMapper mapper;
     private final PagamentoService pagamentoService;
+    private final AlertaDiaLotadoService alertaDiaLotadoService;
 
     private static final Map<StatusPedido, Set<StatusPedido>> TRANSICOES_VALIDAS = Map.ofEntries(
             Map.entry(StatusPedido.ORCAMENTO, Set.of(StatusPedido.AGUARDANDO_SINAL, StatusPedido.CANCELADO)),
@@ -36,10 +39,12 @@ public class PedidoService {
             Map.entry(StatusPedido.ENTREGUE, Set.of())
     );
 
-    public PedidoService(PedidoRepository repository, PedidoMapper mapper, PagamentoService pagamentoService) {
+    public PedidoService(PedidoRepository repository, PedidoMapper mapper, PagamentoService pagamentoService,
+                         AlertaDiaLotadoService alertaDiaLotadoService) {
         this.repository = repository;
         this.mapper = mapper;
         this.pagamentoService = pagamentoService;
+        this.alertaDiaLotadoService = alertaDiaLotadoService;
     }
 
     public List<PedidoResponseDTO> listarTodos() {
@@ -49,6 +54,7 @@ public class PedidoService {
                 .toList();
     }
 
+    @Transactional
     public PedidoResponseDTO cadastrar(PedidoRequestDTO request) {
         Pedido pedido = mapper.toPedido(request);
 
@@ -58,9 +64,11 @@ public class PedidoService {
         }
 
         repository.save(pedido);
+        alertaDiaLotadoService.avaliar(pedido.getDataEntrega());
         return mapper.toPedidoResponse(pedido);
     }
 
+    @Transactional
     public PedidoResponseDTO atualizar(Integer id, PedidoRequestDTO request) {
         Pedido existing = repository.findById(id)
                 .orElseThrow(PedidoIdDontExistsException::new);
@@ -82,6 +90,7 @@ public class PedidoService {
         }
 
         repository.save(pedido);
+        alertaDiaLotadoService.avaliar(pedido.getDataEntrega());
         return mapper.toPedidoResponse(pedido);
     }
 

@@ -40,6 +40,9 @@ class PedidoServiceTest {
     @Mock
     private PagamentoService pagamentoService;
 
+    @Mock
+    private br.com.doceterapia.api.service.notificacao.AlertaDiaLotadoService alertaDiaLotadoService;
+
     @InjectMocks
     private PedidoService pedidoService;
 

@@ -1,14 +1,21 @@
 package br.com.doceterapia.api.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import br.com.doceterapia.api.dto.ConfirmacaoEnvioRequestDTO;
+import br.com.doceterapia.api.dto.NotificacaoAgendaResponseDTO;
 import br.com.doceterapia.api.dto.NotificacaoRequestDTO;
 import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
+import br.com.doceterapia.api.service.NotificacaoEmitterRegistry;
 import br.com.doceterapia.api.service.NotificacaoService;
 import br.com.doceterapia.api.swagger.NotificacaoControllerOpenApi;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @CrossOrigin
@@ -17,9 +24,11 @@ import java.util.List;
 public class NotificacaoController implements NotificacaoControllerOpenApi {
 
     private final NotificacaoService service;
+    private final NotificacaoEmitterRegistry emitterRegistry;
 
-    public NotificacaoController(NotificacaoService service) {
+    public NotificacaoController(NotificacaoService service, NotificacaoEmitterRegistry emitterRegistry) {
         this.service = service;
+        this.emitterRegistry = emitterRegistry;
     }
 
     @PostMapping
@@ -66,5 +75,27 @@ public class NotificacaoController implements NotificacaoControllerOpenApi {
     @Override
     public ResponseEntity<List<NotificacaoResponseDTO>> listarNotificacoesNaoLidas() {
         return ResponseEntity.ok(service.listarNaoLidas());
+    }
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Override
+    public SseEmitter streamNotificacoes() {
+        return emitterRegistry.registrar();
+    }
+
+    @GetMapping("/agenda")
+    @Override
+    public ResponseEntity<List<NotificacaoAgendaResponseDTO>> listarAgenda(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime de,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ate) {
+        return ResponseEntity.ok(service.listarAgenda(de, ate));
+    }
+
+    @PostMapping("/{id}/confirmacao-envio")
+    @Override
+    public ResponseEntity<NotificacaoResponseDTO> confirmarEnvio(
+            @PathVariable Integer id,
+            @Valid @RequestBody ConfirmacaoEnvioRequestDTO request) {
+        return ResponseEntity.ok(service.confirmarEnvio(id, request));
     }
 }
