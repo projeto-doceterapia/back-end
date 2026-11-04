@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -60,7 +61,7 @@ class ConfiguracaoNotificacaoServiceTest {
     @DisplayName("Deve criar a configuração padrão quando nenhuma existe")
     void deveBuscarCriandoPadrao() {
         // Arrange
-        when(repository.findAll()).thenReturn(List.of());
+        when(repository.findFirstByOrderByIdConfiguracaoNotificacaoAsc()).thenReturn(Optional.empty());
         when(repository.save(any(ConfiguracaoNotificacao.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -80,7 +81,7 @@ class ConfiguracaoNotificacaoServiceTest {
         // Arrange
         ConfiguracaoNotificacao existente = new ConfiguracaoNotificacao();
         existente.setIdConfiguracaoNotificacao(1);
-        when(repository.findAll()).thenReturn(List.of(existente));
+        when(repository.findFirstByOrderByIdConfiguracaoNotificacaoAsc()).thenReturn(Optional.of(existente));
         when(repository.save(any(ConfiguracaoNotificacao.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 

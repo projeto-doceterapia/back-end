@@ -57,11 +57,16 @@ public class ConfiguracaoNotificacaoService {
     /**
      * Returns the single settings row, creating it with the owner-confirmed
      * defaults when it does not exist, so callers (API and scheduled checks)
-     * always find a usable configuration.
+     * always find a usable configuration. If two rows ever exist, the oldest wins.
      */
     public ConfiguracaoNotificacao obterOuCriar() {
-        return repository.findAll().stream()
-                .findFirst()
+        return repository.findFirstByOrderByIdConfiguracaoNotificacaoAsc()
+                .orElseGet(this::criarLinhaUnica);
+    }
+
+    // Serializes the first creation; enough for the single back-end instance.
+    private synchronized ConfiguracaoNotificacao criarLinhaUnica() {
+        return repository.findFirstByOrderByIdConfiguracaoNotificacaoAsc()
                 .orElseGet(() -> repository.save(new ConfiguracaoNotificacao()));
     }
 
