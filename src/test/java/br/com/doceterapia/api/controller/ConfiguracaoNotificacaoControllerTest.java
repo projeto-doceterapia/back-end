@@ -57,7 +57,9 @@ class ConfiguracaoNotificacaoControllerTest {
               "resumoInicioDiaAtivo": true,
               "resumoFimDiaAtivo": true,
               "estoqueBaixoAtivo": true,
-              "diaLotadoAtivo": true
+              "diaLotadoAtivo": true,
+              "avisosAutomaticosAtivo": true,
+              "assistenteAtivo": true
             }
             """;
 

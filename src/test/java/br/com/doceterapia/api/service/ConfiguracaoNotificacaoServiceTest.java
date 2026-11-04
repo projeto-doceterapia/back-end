@@ -52,6 +52,8 @@ class ConfiguracaoNotificacaoServiceTest {
         request.setResumoFimDiaAtivo(true);
         request.setEstoqueBaixoAtivo(true);
         request.setDiaLotadoAtivo(true);
+        request.setAvisosAutomaticosAtivo(true);
+        request.setAssistenteAtivo(true);
     }
 
     @Test

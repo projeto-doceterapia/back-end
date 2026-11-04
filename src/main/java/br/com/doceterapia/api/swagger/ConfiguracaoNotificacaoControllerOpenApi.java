@@ -27,7 +27,8 @@ public interface ConfiguracaoNotificacaoControllerOpenApi {
 
     @Operation(summary = "Atualizar configuração de notificações",
             description = "Atualiza a configuração de notificações. Rejeita com 422 quando o fim não é depois do início "
-                    + "ou quando um horário de resumo está fora do expediente")
+                    + "ou quando um horário de resumo está fora do expediente. Ao desligar os avisos automáticos ou o "
+                    + "assistente, as notificações pendentes deixam de ser enviadas pelo WhatsApp e ficam só no sino")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Configuração atualizada com sucesso",
                     content = @Content(mediaType = "application/json",
