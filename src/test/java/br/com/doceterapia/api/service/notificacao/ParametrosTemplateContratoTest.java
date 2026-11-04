@@ -46,6 +46,13 @@ class ParametrosTemplateContratoTest {
     }
 
     @Test
+    @DisplayName("alerta_operacional envia a mensagem sem o ponto final, que já está no corpo do template")
+    void alertaOperacional() throws IOException {
+        assertContrato("alerta_operacional",
+                new ParametrosAlertaOperacional(NotificacaoTesteService.TEXTO_PARAMETRO));
+    }
+
+    @Test
     @DisplayName("resumo_fim_dia separa prontos e aguardando sinal e envia insumos em texto legível")
     void resumoFimDia() throws IOException {
         ParametrosResumoFimDia parametros = new ParametrosResumoFimDia(
