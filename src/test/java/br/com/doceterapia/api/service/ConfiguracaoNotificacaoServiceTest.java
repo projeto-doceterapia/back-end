@@ -5,6 +5,7 @@ import br.com.doceterapia.api.dto.ConfiguracaoNotificacaoResponseDTO;
 import br.com.doceterapia.api.entity.ConfiguracaoNotificacao;
 import br.com.doceterapia.api.exception.ConfiguracaoNotificacaoInvalidaException;
 import br.com.doceterapia.api.repository.ConfiguracaoNotificacaoRepository;
+import br.com.doceterapia.api.repository.NotificacaoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -32,6 +34,9 @@ class ConfiguracaoNotificacaoServiceTest {
 
     @Mock
     private ConfiguracaoNotificacaoRepository repository;
+
+    @Mock
+    private NotificacaoRepository notificacaoRepository;
 
     @InjectMocks
     private ConfiguracaoNotificacaoService service;
@@ -93,6 +98,101 @@ class ConfiguracaoNotificacaoServiceTest {
         assertEquals(LocalTime.of(17, 30), resultado.getHorarioResumoFim());
         assertEquals("1,2,3,4,5,6", existente.getDiasExpediente());
         verify(repository).save(existente);
+    }
+
+    @Test
+    @DisplayName("A configuração padrão traz os dois interruptores ligados")
+    void padraoComInterruptoresLigados() {
+        // Arrange
+        when(repository.findFirstByOrderByIdConfiguracaoNotificacaoAsc()).thenReturn(Optional.empty());
+        when(repository.save(any(ConfiguracaoNotificacao.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        ConfiguracaoNotificacaoResponseDTO resultado = service.buscar();
+
+        // Assert
+        assertTrue(resultado.getAvisosAutomaticosAtivo());
+        assertTrue(resultado.getAssistenteAtivo());
+    }
+
+    private ConfiguracaoNotificacao existenteCom(boolean avisos, boolean assistente) {
+        ConfiguracaoNotificacao existente = new ConfiguracaoNotificacao();
+        existente.setIdConfiguracaoNotificacao(1);
+        existente.setAvisosAutomaticosAtivo(avisos);
+        existente.setAssistenteAtivo(assistente);
+        when(repository.findFirstByOrderByIdConfiguracaoNotificacaoAsc()).thenReturn(Optional.of(existente));
+        when(repository.save(any(ConfiguracaoNotificacao.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        return existente;
+    }
+
+    @Test
+    @DisplayName("Desligar os avisos automáticos descarta as pendentes")
+    void desligarDescartaPendentes() {
+        // Arrange
+        existenteCom(true, true);
+        request.setAvisosAutomaticosAtivo(false);
+
+        // Act
+        service.atualizar(request);
+
+        // Assert
+        verify(notificacaoRepository).descartarPendentes();
+    }
+
+    @Test
+    @DisplayName("Desligar o assistente descarta as pendentes")
+    void desligarAssistenteDescartaPendentes() {
+        // Arrange
+        existenteCom(true, true);
+        request.setAssistenteAtivo(false);
+
+        // Act
+        service.atualizar(request);
+
+        // Assert
+        verify(notificacaoRepository).descartarPendentes();
+    }
+
+    @Test
+    @DisplayName("Sem transição para desligado não há descarte")
+    void semDesligarNaoDescarta() {
+        // Arrange: already off, stays off; the other PUT changes nothing
+        existenteCom(false, true);
+        request.setAvisosAutomaticosAtivo(false);
+
+        // Act
+        service.atualizar(request);
+
+        // Assert
+        verify(notificacaoRepository, never()).descartarPendentes();
+    }
+
+    @Test
+    @DisplayName("Um PUT com os dois ligados não descarta")
+    void putComDoisLigadosNaoDescarta() {
+        // Arrange
+        existenteCom(true, true);
+
+        // Act
+        service.atualizar(request);
+
+        // Assert
+        verify(notificacaoRepository, never()).descartarPendentes();
+    }
+
+    @Test
+    @DisplayName("Religar não descarta nem reativa")
+    void religarNaoReativa() {
+        // Arrange
+        existenteCom(false, false);
+
+        // Act
+        service.atualizar(request);
+
+        // Assert
+        verify(notificacaoRepository, never()).descartarPendentes();
     }
 
     @Test
