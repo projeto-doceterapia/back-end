@@ -16,6 +16,8 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, Intege
 
     Optional<Notificacao> findByChaveUnicidade(String chaveUnicidade);
 
+    Optional<Notificacao> findFirstByChaveUnicidadeStartingWithOrderByDataCriacaoDesc(String prefixo);
+
     // Window overlaps [de, ate] when janelaInicio <= ate and janelaFim >= de.
     List<Notificacao> findByStatusEnvioAndJanelaInicioLessThanEqualAndJanelaFimGreaterThanEqual(
             StatusEnvioNotificacao statusEnvio, LocalDateTime ate, LocalDateTime de);
