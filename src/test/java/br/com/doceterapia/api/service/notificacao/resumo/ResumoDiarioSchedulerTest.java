@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -90,6 +91,23 @@ class ResumoDiarioSchedulerTest {
         ComandoNotificacao comando = captor.getValue();
         assertEquals(TipoNotificacao.RESUMO_INICIO_DIA, comando.tipo());
         assertTrue(comando.mensagem().contains("nada pendente"));
+    }
+
+    @Test
+    @DisplayName("Resumo leva a data do dia nos parâmetros do template")
+    void resumoLevaDataDoDia() {
+        when(configuracaoService.obterOuCriar()).thenReturn(config);
+        comConsultasVazias();
+
+        ArgumentCaptor<ComandoNotificacao> captor = ArgumentCaptor.forClass(ComandoNotificacao.class);
+        when(criacaoService.criar(captor.capture())).thenReturn(new Notificacao());
+
+        schedulerEm(LocalDateTime.of(2026, 10, 21, 18, 0)).verificar();
+
+        ParametrosResumoInicioDia inicio = (ParametrosResumoInicioDia) captor.getAllValues().get(0).parametros();
+        ParametrosResumoFimDia fim = (ParametrosResumoFimDia) captor.getAllValues().get(1).parametros();
+        assertEquals(LocalDate.of(2026, 10, 21), inicio.data());
+        assertEquals(LocalDate.of(2026, 10, 21), fim.data());
     }
 
     @Test
