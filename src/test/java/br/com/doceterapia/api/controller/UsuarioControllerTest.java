@@ -3,6 +3,7 @@ package br.com.doceterapia.api.controller;
 import br.com.doceterapia.api.config.AutenticacaoEntryPoint;
 import br.com.doceterapia.api.config.GerenciadorCookieSessao;
 import br.com.doceterapia.api.config.SecurityConfiguracao;
+import br.com.doceterapia.api.config.SegurancaProperties;
 import br.com.doceterapia.api.dto.UsuarioDetalhesDto;
 import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
 import br.com.doceterapia.api.entity.Usuario;
@@ -50,6 +51,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = UsuarioController.class)
 @Import({
         SecurityConfiguracao.class,
+        SegurancaProperties.class,
         AutenticacaoEntryPoint.class,
         GerenciadorCookieSessao.class,
         RequestValidationExceptionHandler.class

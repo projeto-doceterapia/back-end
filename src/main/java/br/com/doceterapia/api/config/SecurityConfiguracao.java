@@ -5,6 +5,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManagers;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -16,6 +20,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -32,6 +37,7 @@ public class SecurityConfiguracao {
 
     private final AutenticacaoService autenticacaoService;
     private final AutenticacaoEntryPoint autenticacaoJwtEntryPoint;
+    private final SegurancaProperties segurancaProperties;
 
     private static final String[] URLS_PERMITIDAS = {
             "/swagger-ui/**",
@@ -54,9 +60,11 @@ public class SecurityConfiguracao {
     };
 
     public SecurityConfiguracao(AutenticacaoService autenticacaoService,
-                                AutenticacaoEntryPoint autenticacaoJwtEntryPoint) {
+                                AutenticacaoEntryPoint autenticacaoJwtEntryPoint,
+                                SegurancaProperties segurancaProperties) {
         this.autenticacaoService = autenticacaoService;
         this.autenticacaoJwtEntryPoint = autenticacaoJwtEntryPoint;
+        this.segurancaProperties = segurancaProperties;
     }
 
     @Bean
@@ -69,7 +77,7 @@ public class SecurityConfiguracao {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(URLS_PERMITIDAS).permitAll()
                         .requestMatchers("/clientes/**", "/pedidos/**", "/pagamentos/**", "/cancelamentos/**", "/categorias-produto/**", "/produtos/**", "/categorias-insumo/**", "/insumos/**", "/itens-pedido/**", "/producoes/**", "/notificacoes/**", "/configuracao-farol/**", "/configuracao-notificacao/**", "/estoque/**", "/notas-fiscais/**").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().access(usuarioLogado())
                 )
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(autenticacaoJwtEntryPoint))
@@ -77,8 +85,15 @@ public class SecurityConfiguracao {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.addFilterBefore(jwtAuthenticationFilterBean(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new OrquestradorTokenFilter(segurancaProperties), AutenticacaoFilter.class);
 
         return http.build();
+    }
+
+    private static AuthorizationManager<RequestAuthorizationContext> usuarioLogado() {
+        return AuthorizationManagers.allOf(
+                AuthenticatedAuthorizationManager.authenticated(),
+                AuthorizationManagers.not(AuthorityAuthorizationManager.hasRole("ORQUESTRADOR")));
     }
 
     @Bean
