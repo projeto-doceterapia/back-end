@@ -4,6 +4,7 @@ import br.com.doceterapia.api.entity.ConfiguracaoNotificacao;
 import br.com.doceterapia.api.entity.Notificacao;
 import br.com.doceterapia.api.enums.StatusEnvioNotificacao;
 import br.com.doceterapia.api.enums.TipoNotificacao;
+import br.com.doceterapia.api.mapper.NotificacaoMapper;
 import br.com.doceterapia.api.repository.NotificacaoRepository;
 import br.com.doceterapia.api.service.ConfiguracaoNotificacaoService;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -43,6 +45,12 @@ class CriacaoNotificacaoServiceTest {
     @Mock
     private ConfiguracaoNotificacaoService configuracaoService;
 
+    @Mock
+    private NotificacaoMapper mapper;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     private ConfiguracaoNotificacao config;
@@ -62,7 +70,7 @@ class CriacaoNotificacaoServiceTest {
     private CriacaoNotificacaoService servicoCom(LocalDateTime agora) {
         Clock clock = Clock.fixed(agora.atZone(ZONA).toInstant(), ZONA);
         return new CriacaoNotificacaoService(
-                repository, configuracaoService, clock, objectMapper, 10, 2);
+                repository, configuracaoService, clock, objectMapper, 10, 2, mapper, eventPublisher);
     }
 
     @Test
