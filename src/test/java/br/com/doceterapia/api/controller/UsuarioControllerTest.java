@@ -1,6 +1,7 @@
 package br.com.doceterapia.api.controller;
 
 import br.com.doceterapia.api.config.AutenticacaoEntryPoint;
+import br.com.doceterapia.api.config.GerenciadorCookieSessao;
 import br.com.doceterapia.api.config.SecurityConfiguracao;
 import br.com.doceterapia.api.dto.UsuarioDetalhesDto;
 import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
@@ -37,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({
         SecurityConfiguracao.class,
         AutenticacaoEntryPoint.class,
+        GerenciadorCookieSessao.class,
         RequestValidationExceptionHandler.class
 })
 @DisplayName("Testes para UsuarioController com segurança")
