@@ -51,6 +51,7 @@ Opcionais:
 | `ADMIN_EMAIL` | vazio | E-mail do primeiro usuário. Necessário só na primeira subida |
 | `ADMIN_SENHA` | vazio | Senha do primeiro usuário, de 6 a 20 caracteres. Necessária só na primeira subida; apague depois |
 | `COOKIE_SECURE` | `false` | Atributo `secure` do cookie de sessão, no login e no logout. Use `true` só com HTTPS na frente da aplicação |
+| `DEMO_DATA` | `false` | Com `true`, carrega a massa fictícia de demonstração depois do schema (ver [Massa fictícia](#massa-fictícia)). Só tem efeito com o Flyway ligado, no perfil `prod` |
 
 ## Primeiro usuário
 
@@ -130,6 +131,71 @@ SCHEMA_TEST_DB_URL='jdbc:mysql://127.0.0.1:33306/doce_terapia_ci?allowPublicKeyR
 
 docker stop mysql-schema-teste
 ```
+
+## Massa fictícia
+
+Um único gerador em Python 3.10+, só com a biblioteca padrão, fica em `tools/fictitious-data/` e
+produz SQL em dois tamanhos. A pasta está fora de `src`, então o gerador e o volume nunca entram
+no jar. Todos os dados são inventados: telefones `+55 11 90000-xxxx`, CEPs `00000xxx`, nomes,
+endereços e marcas genéricos, e nenhuma linha em `usuario`.
+
+| Tamanho | Saída | Conteúdo |
+|---------|-------|----------|
+| `demo` | `src/main/resources/db/demo/V1_1__demo_data.sql`, versionado | ~70 pedidos em todos os status, com datas relativas ao dia da carga |
+| `volume` | `target/fictitious-data/volume.sql`, nunca versionado | ~80.000 pedidos em 3 anos, com datas literais |
+
+A partir da raiz do repositório (`python` no Windows, `python3` no CI):
+
+```bash
+# Regenera o demo. Quem muda o V1 ou uma entidade regenera no mesmo PR.
+python tools/fictitious-data/gerador.py --tamanho demo --semente 2026 --saida src/main/resources/db/demo/V1_1__demo_data.sql
+
+# Gera o volume, imprime as contagens e falha se uma invariante for violada
+python tools/fictitious-data/gerador.py --tamanho volume --semente 2026 --data-referencia 2026-11-16 --saida target/fictitious-data/volume.sql --verificar
+
+# Testes do gerador; um deles falha se o arquivo do demo não for o que o gerador produz
+python -m unittest discover -s tools/fictitious-data -p "test_*.py"
+```
+
+A mesma combinação de tamanho, semente e data de referência produz os mesmos bytes.
+
+`--com-saida-producao` acrescenta as movimentações `SAIDA_PRODUCAO`, com origem `PRODUCAO`, sem
+mudar o saldo final. Os enums `TipoMovimentacao` e `OrigemMovimentacao` ainda não têm esses
+valores: com a opção ligada, `GET /estoque/movimentos` responde 500 ao ler uma dessas linhas.
+Por isso o demo versionado não usa a opção.
+
+### Carregar o demo
+
+Suba com `DEMO_DATA=true` num banco **vazio**. O Flyway aplica o `V1` e depois a versão `1.1` do
+demo. Se o SQL não couber no schema, a migração falha e a aplicação não sobe. O
+`DemoDataMigrationTest` faz o mesmo contra o MySQL de teste descrito em
+[Validar o schema contra um MySQL real](#validar-o-schema-contra-um-mysql-real) e confere as invariantes.
+
+Escolha o valor antes da primeira subida. Para trocar, recrie o banco:
+
+- **De `true` para `false`:** a aplicação sobe, mas os dados do demo continuam no banco. O Flyway
+  trata a versão `1.1` como uma migração futura e não reclama.
+- **De `false` para `true`:** o Flyway tenta aplicar o demo sobre o que já existe. Com dados no
+  banco, os ids colidem, a migração falha e a aplicação não sobe.
+
+O perfil `local` não roda o Flyway, então `DEMO_DATA` não tem efeito nele.
+
+As colunas `produto.custo_estimado`, `produto.preco_sugerido` e `pagamento.forma_pagamento` ficam
+`NULL` no demo. Enquanto o custo do produto for gravado nessas colunas, `POST /itens-pedido` num
+produto do demo responde 500 ao calcular a margem do item.
+
+### Carregar o volume
+
+1. Suba com `DEMO_DATA` ausente ou `false` num banco vazio, para o Flyway aplicar só o `V1`, e
+   pare a aplicação sem criar nenhum registro.
+2. Gere o arquivo com o comando acima.
+3. Carregue pelo cliente do container do banco, com as credenciais do ambiente:
+
+```bash
+docker compose exec -T <serviço do banco> sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' < target/fictitious-data/volume.sql
+```
+
+O arquivo desliga e religa `FOREIGN_KEY_CHECKS` e `unique_checks` e usa lotes de 1.000 linhas.
 
 ## Endpoints
 
