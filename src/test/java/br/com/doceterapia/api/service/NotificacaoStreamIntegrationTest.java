@@ -159,6 +159,23 @@ class NotificacaoStreamIntegrationTest {
         assertThat(cliente.notificacoesDoInsumo(insumo)).isEmpty();
     }
 
+    @Test
+    @DisplayName("Subir o mínimo acima do saldo, sem mudar a quantidade, chega ao cliente")
+    void minimoElevadoAcimaDoSaldoChegaAoCliente() {
+        Insumo insumo = criarInsumo("Farinha mínimo elevado", "3", "2");
+        EmitterCaptura cliente = conectarCliente();
+
+        insumoService.atualizar(insumo.getIdInsumo(), edicao(insumo, "3", "4"));
+
+        assertThat(cliente.notificacoesDoInsumo(insumo)).singleElement()
+                .satisfies(dto -> {
+                    assertThat(dto.getTipo()).isEqualTo(TipoNotificacao.ESTOQUE_BAIXO);
+                    assertThat(dto.getMensagem()).contains("mínimo 4");
+                });
+        assertThat(insumoRepository.findById(insumo.getIdInsumo()).orElseThrow().getQuantidadeMinima())
+                .isEqualByComparingTo("4");
+    }
+
     private Insumo criarInsumo(String nome, String saldo, String minimo) {
         CategoriaInsumo categoria = new CategoriaInsumo();
         categoria.setNome("Categoria " + nome);
