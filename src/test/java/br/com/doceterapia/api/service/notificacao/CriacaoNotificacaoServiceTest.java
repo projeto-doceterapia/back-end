@@ -1,9 +1,11 @@
 package br.com.doceterapia.api.service.notificacao;
 
+import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
 import br.com.doceterapia.api.entity.ConfiguracaoNotificacao;
 import br.com.doceterapia.api.entity.Notificacao;
 import br.com.doceterapia.api.enums.StatusEnvioNotificacao;
 import br.com.doceterapia.api.enums.TipoNotificacao;
+import br.com.doceterapia.api.event.NotificacaoCriadaEvent;
 import br.com.doceterapia.api.mapper.NotificacaoMapper;
 import br.com.doceterapia.api.repository.NotificacaoRepository;
 import br.com.doceterapia.api.service.ConfiguracaoNotificacaoService;
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
@@ -165,5 +168,62 @@ class CriacaoNotificacaoServiceTest {
         // Assert
         assertSame(existente, resultado);
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Chave nova publica o evento com o mesmo DTO da API, já com id, tipo e status salvos")
+    void criacaoPublicaEventoComRespostaDaApi() {
+        // Arrange
+        LocalDateTime agora = LocalDateTime.of(2026, 10, 21, 10, 0);
+        when(configuracaoService.obterOuCriar()).thenReturn(config);
+        when(repository.findByChaveUnicidade(anyString())).thenReturn(Optional.empty());
+        when(repository.save(any(Notificacao.class))).thenAnswer(invocation -> {
+            Notificacao salva = invocation.getArgument(0);
+            salva.setIdNotificacao(31);
+            return salva;
+        });
+        when(mapper.toResponseDTO(any(Notificacao.class))).thenAnswer(invocation -> {
+            Notificacao salva = invocation.getArgument(0);
+            NotificacaoResponseDTO dto = new NotificacaoResponseDTO();
+            dto.setIdNotificacao(salva.getIdNotificacao());
+            dto.setTipo(salva.getTipo());
+            dto.setStatusEnvio(salva.getStatusEnvio());
+            return dto;
+        });
+
+        // Act
+        servicoCom(agora).criar(comandoEstoqueBaixo());
+
+        // Assert
+        ArgumentCaptor<NotificacaoCriadaEvent> captor = ArgumentCaptor.forClass(NotificacaoCriadaEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        NotificacaoResponseDTO publicado = captor.getValue().notificacao();
+        assertEquals(31, publicado.getIdNotificacao());
+        assertEquals(TipoNotificacao.ESTOQUE_BAIXO, publicado.getTipo());
+        assertEquals(StatusEnvioNotificacao.PENDENTE, publicado.getStatusEnvio());
+    }
+
+    @Test
+    @DisplayName("Chave existente devolve a notificação salva e não publica evento")
+    void chaveExistenteNaoPublicaEvento() {
+        // Arrange
+        LocalDateTime agora = LocalDateTime.of(2026, 10, 21, 10, 0);
+        Notificacao existente = new Notificacao();
+        existente.setIdNotificacao(99);
+        when(repository.findByChaveUnicidade(anyString())).thenReturn(Optional.of(existente));
+
+        // Act
+        Notificacao resultado = servicoCom(agora).criar(comandoEstoqueBaixo());
+
+        // Assert
+        assertSame(existente, resultado);
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
+    }
+
+    private ComandoNotificacao comandoEstoqueBaixo() {
+        return ComandoNotificacao.imediata(
+                TipoNotificacao.ESTOQUE_BAIXO, "Estoque baixo", "Farinha baixa",
+                "ESTOQUE_BAIXO:insumo:1:2026-10-21", "estoque_baixo",
+                new ParametrosTeste("Farinha", 1), null, null);
     }
 }
