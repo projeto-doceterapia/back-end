@@ -9,7 +9,7 @@ API REST da doceria Doce Terapia. Gerencia clientes, produtos, insumos, pedidos,
 produção, pagamentos, estoque e notificações.
 
 - **Java** 21 · **Spring Boot** 4.0 · **Spring Data JPA**
-- **Banco:** H2 em memória (perfil `local`) / MySQL 8 (perfil `prod`)
+- **Banco:** H2 em memória (perfil `local`) / MySQL 8 com migrações Flyway (perfil `prod`)
 - **Segurança:** Spring Security + JWT (HMAC-SHA256), autenticação por cookie
 - **Docs:** Swagger UI (OpenAPI 3) · **Testes:** JUnit 5 + Mockito + JaCoCo
 
@@ -25,8 +25,8 @@ O perfil ativo vem de `SPRING_PROFILES_ACTIVE` (default `local`).
 
 | Perfil | Banco | `ddl-auto` | Observações |
 |--------|-------|------------|-------------|
-| `local` (default) | H2 em memória | `create-drop` | Console H2 em `/h2-console`; `JWT_SECRET` tem default de desenvolvimento |
-| `prod` | MySQL 8 | `validate` | Todos os valores vêm do ambiente, sem defaults; a aplicação não inicia sem `JWT_SECRET` |
+| `local` (default) | H2 em memória | `create-drop` | Flyway desligado; console H2 em `/h2-console`; `JWT_SECRET` tem default de desenvolvimento |
+| `prod` | MySQL 8 | `validate` | Flyway ligado; todos os valores vêm do ambiente, sem defaults; a aplicação não inicia sem `JWT_SECRET` |
 
 ## Variáveis de ambiente
 
@@ -71,6 +71,44 @@ A API sobe em `http://localhost:8080`. Swagger UI em
 O `clean verify` falha se a cobertura do projeto ficar abaixo do piso: 65% de linhas e
 65% de branches. A classe `ApiDoceterapiaApplication` e o pacote `config` ficam fora da
 conta. O piso está na execução `check` do `jacoco-maven-plugin`, no `pom.xml`.
+
+## Schema do banco
+
+O schema de produção nasce das migrações Flyway em `src/main/resources/db/migration`.
+Na subida com o perfil `prod`, o Flyway aplica o `V1__schema.sql` no banco de `DB_URL`, e
+o Hibernate confere as entidades com `ddl-auto=validate`. Se algo divergir, a aplicação
+não sobe. O usuário de `DB_USERNAME` precisa de permissão de DDL nesse banco.
+
+- **Sem dados reais, o `V1__schema.sql` é editado no lugar.** Uma migração `V2` em diante só
+  existe quando houver dados a preservar.
+- **Editar o V1 exige recriar o banco.** O Flyway guarda o checksum do script aplicado e
+  recusa a subida quando o arquivo muda. Um banco criado sem o Flyway também é recusado, por
+  não estar vazio e não ter histórico de migrações. Nos dois casos, apague o volume do banco
+  e suba de novo. Com Docker Compose: `docker compose down -v`. Esse comando apaga **todos**
+  os dados do volume.
+- **Não use** `baseline-on-migrate` nem `flyway repair` para contornar a recusa: o banco
+  ficaria sem as colunas novas e o erro apareceria depois.
+- **O perfil `local` e os testes não rodam o Flyway.** O H2 usa o schema gerado pelo Hibernate,
+  então não tem as linhas semeadas nem os índices do V1. As linhas únicas de configuração
+  são criadas na primeira leitura quando faltam.
+
+O V1 semeia uma linha em `configuracao_notificacao` e outra em `configuracao_precificacao`,
+ambas com os valores padrão das colunas.
+
+### Validar o schema contra um MySQL real
+
+O `SchemaFlywayValidacaoTest` só roda com `SCHEMA_TEST_DB_URL` definida; sem ela, é pulado. O
+CI define as variáveis e usa um serviço `mysql:8.4.4`. Para rodar localmente, use um container
+descartável e credenciais fictícias, porque **o teste apaga tudo o que houver no banco
+apontado**:
+
+```bash
+docker run -d --rm --name mysql-schema-teste -p 127.0.0.1:33306:3306   -e MYSQL_ROOT_PASSWORD=ficticia -e MYSQL_DATABASE=doce_terapia_ci   -e MYSQL_USER=teste -e MYSQL_PASSWORD=ficticia mysql:8.4.4
+
+SCHEMA_TEST_DB_URL='jdbc:mysql://127.0.0.1:33306/doce_terapia_ci?allowPublicKeyRetrieval=true&useSSL=false' SCHEMA_TEST_DB_USERNAME=teste SCHEMA_TEST_DB_PASSWORD=ficticia ./mvnw.cmd test -Dtest=SchemaFlywayValidacaoTest
+
+docker stop mysql-schema-teste
+```
 
 ## Endpoints
 
