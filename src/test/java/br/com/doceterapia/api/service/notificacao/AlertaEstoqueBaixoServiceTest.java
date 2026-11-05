@@ -64,7 +64,7 @@ class AlertaEstoqueBaixoServiceTest {
         when(configuracaoService.obterOuCriar()).thenReturn(configComEstoqueBaixo(true));
 
         // 3 (acima do mínimo 2) -> 1 (abaixo do mínimo)
-        service.avaliar(insumo, BigDecimal.valueOf(3), BigDecimal.valueOf(1));
+        service.avaliar(insumo, BigDecimal.valueOf(3), BigDecimal.valueOf(2), BigDecimal.valueOf(1));
 
         ArgumentCaptor<ComandoNotificacao> captor = ArgumentCaptor.forClass(ComandoNotificacao.class);
         verify(criacaoService).criar(captor.capture());
@@ -76,7 +76,7 @@ class AlertaEstoqueBaixoServiceTest {
     @DisplayName("Saldo já abaixo do mínimo não cria novo alerta")
     void jaAbaixoNaoCriaAlerta() {
         // 1 (já abaixo do mínimo 2) -> 0.5 (continua abaixo)
-        service.avaliar(insumo, BigDecimal.valueOf(1), new BigDecimal("0.5"));
+        service.avaliar(insumo, BigDecimal.valueOf(1), BigDecimal.valueOf(2), new BigDecimal("0.5"));
 
         verify(criacaoService, never()).criar(org.mockito.ArgumentMatchers.any());
     }
@@ -87,7 +87,7 @@ class AlertaEstoqueBaixoServiceTest {
         when(configuracaoService.obterOuCriar()).thenReturn(configComEstoqueBaixo(true));
 
         // 3 (acima) -> 2 (igual ao mínimo)
-        service.avaliar(insumo, BigDecimal.valueOf(3), BigDecimal.valueOf(2));
+        service.avaliar(insumo, BigDecimal.valueOf(3), BigDecimal.valueOf(2), BigDecimal.valueOf(2));
 
         verify(criacaoService).criar(org.mockito.ArgumentMatchers.any());
     }
@@ -97,7 +97,7 @@ class AlertaEstoqueBaixoServiceTest {
     void alertaDesativadoNaoCria() {
         when(configuracaoService.obterOuCriar()).thenReturn(configComEstoqueBaixo(false));
 
-        service.avaliar(insumo, BigDecimal.valueOf(3), BigDecimal.valueOf(1));
+        service.avaliar(insumo, BigDecimal.valueOf(3), BigDecimal.valueOf(2), BigDecimal.valueOf(1));
 
         verify(criacaoService, never()).criar(org.mockito.ArgumentMatchers.any());
     }

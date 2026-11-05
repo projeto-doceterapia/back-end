@@ -30,8 +30,10 @@ import java.util.Optional;
 
 /**
  * Owns every change to a supply balance. All balance writes go through
- * {@link #aplicarMovimentacao} so the pessimistic lock and future invariants
- * (e.g. the minimum-crossing alert) live in a single place.
+ * {@link #aplicarMovimentacao} so the pessimistic lock and the invariants that
+ * depend on it (e.g. the low stock alert) live in a single place. A new minimum
+ * sent with a balance edit is also applied here, under the same lock, because it
+ * decides that alert.
  */
 @Service
 public class MovimentacaoEstoqueService {
@@ -97,7 +99,7 @@ public class MovimentacaoEstoqueService {
                 comando.chaveNota(), comando.fluxoId(), comando.chaveIdempotencia(), hash,
                 comando.ocorridoEm() != null ? comando.ocorridoEm() : LocalDateTime.now());
 
-        aplicarMovimentacao(insumo, movimentacao, custo);
+        aplicarMovimentacao(insumo, movimentacao, custo, insumo.getQuantidadeMinima());
 
         return new ResultadoMovimentacao(movimentacao, false);
     }
@@ -128,7 +130,7 @@ public class MovimentacaoEstoqueService {
                 quantidade, insumo.getUnidade(), null, OrigemMovimentacao.MANUAL,
                 null, null, null, calcularHashManual(insumo, TipoMovimentacao.SALDO_INICIAL, quantidade),
                 LocalDateTime.now());
-        aplicarMovimentacao(insumo, movimentacao, null);
+        aplicarMovimentacao(insumo, movimentacao, null, insumo.getQuantidadeMinima());
         return movimentacao;
     }
 
@@ -138,38 +140,50 @@ public class MovimentacaoEstoqueService {
      */
     @Transactional
     public MovimentacaoEstoque registrarAjuste(Insumo insumo, BigDecimal diferenca) {
+        return registrarAjuste(insumo, diferenca, insumo.getQuantidadeMinima());
+    }
+
+    private MovimentacaoEstoque registrarAjuste(Insumo insumo, BigDecimal diferenca, BigDecimal minimoAnterior) {
         MovimentacaoEstoque movimentacao = montar(insumo, TipoMovimentacao.AJUSTE, diferenca,
                 diferenca, insumo.getUnidade(), null, OrigemMovimentacao.MANUAL,
                 null, null, null, calcularHashManual(insumo, TipoMovimentacao.AJUSTE, diferenca),
                 LocalDateTime.now());
-        aplicarMovimentacao(insumo, movimentacao, null);
+        aplicarMovimentacao(insumo, movimentacao, null, minimoAnterior);
         return movimentacao;
     }
 
     /**
-     * Adjusts a supply to a target balance. The signed difference is computed
-     * from the balance read AFTER the row lock is taken, so concurrent targets
-     * never apply a stale delta. Returns the recorded movement, or empty when
-     * the target already matches the current balance.
+     * Adjusts a supply to a target balance and applies its new minimum. The signed
+     * difference is computed from the balance read AFTER the row lock is taken, so
+     * concurrent targets never apply a stale delta. The low stock alert is evaluated
+     * exactly once, against the new minimum, even when the balance does not change.
+     * Returns the recorded movement, or empty when the target already matches the
+     * current balance.
      */
     @Transactional
-    public Optional<MovimentacaoEstoque> registrarAjusteParaAlvo(Insumo insumo, BigDecimal quantidadeAlvo) {
+    public Optional<MovimentacaoEstoque> registrarAjusteParaAlvo(Insumo insumo, BigDecimal quantidadeAlvo,
+                                                                 BigDecimal quantidadeMinimaNova) {
         entityManager.lock(insumo, LockModeType.PESSIMISTIC_WRITE);
         entityManager.refresh(insumo);
+        BigDecimal minimoAnterior = insumo.getQuantidadeMinima();
+        // Set after the refresh: the refresh reloads the row and would discard it.
+        insumo.setQuantidadeMinima(quantidadeMinimaNova);
 
         BigDecimal saldoAtual = insumo.getQuantidadeAtual() != null ? insumo.getQuantidadeAtual() : BigDecimal.ZERO;
         BigDecimal diferenca = quantidadeAlvo.subtract(saldoAtual);
         if (diferenca.signum() == 0) {
+            alertaEstoqueBaixoService.avaliar(insumo, saldoAtual, minimoAnterior, saldoAtual);
             return Optional.empty();
         }
-        return Optional.of(registrarAjuste(insumo, diferenca));
+        return Optional.of(registrarAjuste(insumo, diferenca, minimoAnterior));
     }
 
     /**
      * The single place that mutates a supply balance. Holds a pessimistic
      * write lock on the supply row so concurrent movements never lose updates.
      */
-    private void aplicarMovimentacao(Insumo insumo, MovimentacaoEstoque movimentacao, BigDecimal custoNovo) {
+    private void aplicarMovimentacao(Insumo insumo, MovimentacaoEstoque movimentacao, BigDecimal custoNovo,
+                                     BigDecimal minimoAnterior) {
         entityManager.lock(insumo, LockModeType.PESSIMISTIC_WRITE);
 
         BigDecimal saldoAnterior = insumo.getQuantidadeAtual() != null ? insumo.getQuantidadeAtual() : BigDecimal.ZERO;
@@ -182,7 +196,7 @@ public class MovimentacaoEstoqueService {
 
         repository.saveAndFlush(movimentacao);
 
-        alertaEstoqueBaixoService.avaliar(insumo, saldoAnterior, saldoNovo);
+        alertaEstoqueBaixoService.avaliar(insumo, saldoAnterior, minimoAnterior, saldoNovo);
     }
 
     private Insumo carregarInsumoAtivoComLock(Integer insumoId) {

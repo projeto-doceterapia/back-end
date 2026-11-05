@@ -64,17 +64,19 @@ public class InsumoService {
             throw new CategoriaInsumoIdDontExistsException();
         }
 
+        Insumo dados = insumoMapper.toEntity(request);
+
         // Adjust the balance first: the delta is computed inside the locked
         // section against the committed balance, so concurrent updates never
-        // apply a stale difference. The metadata is written afterwards to
-        // survive the row refresh done while locking.
-        movimentacaoEstoqueService.registrarAjusteParaAlvo(existente, request.getQuantidadeAtual());
+        // apply a stale difference. The minimum goes along because it decides the
+        // low stock alert; the other metadata is written afterwards to survive
+        // the row refresh done while locking.
+        movimentacaoEstoqueService.registrarAjusteParaAlvo(
+                existente, request.getQuantidadeAtual(), dados.getQuantidadeMinima());
 
-        Insumo dados = insumoMapper.toEntity(request);
         existente.setCategoria(dados.getCategoria());
         existente.setNome(dados.getNome());
         existente.setNomeNormalizado(dados.getNomeNormalizado());
-        existente.setQuantidadeMinima(dados.getQuantidadeMinima());
         existente.setUnidade(dados.getUnidade());
         existente.setStatus(dados.getStatus());
         existente.setMarca(dados.getMarca());

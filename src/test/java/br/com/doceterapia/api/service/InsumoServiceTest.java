@@ -168,7 +168,8 @@ class InsumoServiceTest {
 
         insumoService.atualizar(1, insumoRequestDTO);
 
-        verify(movimentacaoEstoqueService).registrarAjusteParaAlvo(eq(insumo), eq(BigDecimal.valueOf(7)));
+        verify(movimentacaoEstoqueService).registrarAjusteParaAlvo(
+                eq(insumo), eq(BigDecimal.valueOf(7)), eq(BigDecimal.valueOf(2.0)));
         verify(insumoRepository).save(insumo);
     }
 
@@ -180,11 +181,14 @@ class InsumoServiceTest {
 
         when(insumoRepository.findById(1)).thenReturn(Optional.of(insumo));
         when(categoriaInsumoRepository.existsById(1)).thenReturn(true);
-        when(insumoMapper.toEntity(insumoRequestDTO)).thenReturn(new Insumo());
+        Insumo dados = new Insumo();
+        dados.setQuantidadeMinima(BigDecimal.valueOf(4));
+        when(insumoMapper.toEntity(insumoRequestDTO)).thenReturn(dados);
 
         insumoService.atualizar(1, insumoRequestDTO);
 
-        verify(movimentacaoEstoqueService).registrarAjusteParaAlvo(eq(insumo), eq(BigDecimal.valueOf(10)));
+        verify(movimentacaoEstoqueService).registrarAjusteParaAlvo(
+                eq(insumo), eq(BigDecimal.valueOf(10)), eq(BigDecimal.valueOf(4)));
         verify(insumoRepository).save(insumo);
     }
 
