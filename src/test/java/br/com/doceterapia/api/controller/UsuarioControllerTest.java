@@ -10,17 +10,27 @@ import br.com.doceterapia.api.exception.RequestValidationExceptionHandler;
 import br.com.doceterapia.api.exception.UsuarioEmailAlreadyExistsException;
 import br.com.doceterapia.api.service.AutenticacaoService;
 import br.com.doceterapia.api.service.UsuarioService;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import java.time.Instant;
+import java.util.Date;
+
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -29,6 +39,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -58,6 +69,9 @@ class UsuarioControllerTest {
 
     @MockitoBean
     private AutenticacaoService autenticacaoService;
+
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
     private static RequestPostProcessor sessaoDaDona() {
         Usuario usuario = new Usuario();
@@ -134,5 +148,23 @@ class UsuarioControllerTest {
                 .andExpect(jsonPath("$.error").value("Conflict"))
                 .andExpect(jsonPath("$.message").value("Já existe um usuário com este e-mail."))
                 .andExpect(jsonPath("$.path").value("/usuarios"));
+    }
+
+    @Test
+    @DisplayName("POST /usuarios/logout sem sessão ou com token expirado devolve 204 e limpa o cookie")
+    void logoutSemSessaoLimpaCookie() throws Exception {
+        mockMvc.perform(post("/usuarios/logout"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")));
+
+        String tokenExpirado = Jwts.builder()
+                .subject(EMAIL)
+                .expiration(Date.from(Instant.now().minusSeconds(60)))
+                .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret)))
+                .compact();
+
+        mockMvc.perform(post("/usuarios/logout").cookie(new Cookie(UsuarioController.COOKIE_NOME, tokenExpirado)))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")));
     }
 }

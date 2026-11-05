@@ -64,15 +64,13 @@ public interface UsuarioControllerOpenApi {
 
     @Operation(
             summary = "Encerrar sessão",
-            description = "Invalida a sessão do usuário autenticado removendo o cookie `authToken` do browser (Max-Age=0). " +
+            description = "Remove o cookie `authToken` do browser (Max-Age=0). Rota pública e idempotente: funciona sem sessão e com token expirado. " +
                     "O token JWT permanece tecnicamente válido até expirar, por isso use tokens de curta duração em produção."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Logout realizado com sucesso. Cookie removido."),
-            @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    @SecurityRequirement(name = "Bearer")
     ResponseEntity<Void> logout(HttpServletResponse response);
 
     @Operation(
