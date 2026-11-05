@@ -30,7 +30,9 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import java.time.Instant;
 import java.util.Date;
 
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -148,6 +150,45 @@ class UsuarioControllerTest {
                 .andExpect(jsonPath("$.error").value("Conflict"))
                 .andExpect(jsonPath("$.message").value("Já existe um usuário com este e-mail."))
                 .andExpect(jsonPath("$.path").value("/usuarios"));
+    }
+
+    @Test
+    @DisplayName("POST /usuarios com nome vazio devolve 400 com mensagem em português")
+    void criarComDadosInvalidosRetorna400EmPortugues() throws Exception {
+        mockMvc.perform(post("/usuarios")
+                        .with(sessaoDaDona())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "nome": "", "email": "funcionaria@exemplo.com", "senha": "SenhaFicticia1" }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(anyOf(
+                        is("Informe o nome."),
+                        is("O nome deve ter de 3 a 50 caracteres."))));
+
+        verify(usuarioService, never()).criar(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("POST /usuarios sem e-mail ou com senha curta devolve 400 com mensagem em português")
+    void criarSemEmailOuComSenhaCurtaRetorna400() throws Exception {
+        mockMvc.perform(post("/usuarios")
+                        .with(sessaoDaDona())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "nome": "Funcionária Exemplo", "senha": "SenhaFicticia1" }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Informe o e-mail."));
+
+        mockMvc.perform(post("/usuarios")
+                        .with(sessaoDaDona())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "nome": "Funcionária Exemplo", "email": "funcionaria@exemplo.com", "senha": "123" }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("A senha deve ter de 6 a 20 caracteres."));
     }
 
     @Test
