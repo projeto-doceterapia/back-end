@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import br.com.doceterapia.api.entity.Usuario;
 import br.com.doceterapia.api.service.UsuarioService;
@@ -73,6 +74,12 @@ public class UsuarioController implements UsuarioControllerOpenApi {
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    @Override
+    public ResponseEntity<UsuarioLogadoResponseDTO> buscarUsuarioLogado(Authentication authentication) {
+        return ResponseEntity.ok(this.usuarioService.buscarUsuarioLogado(authentication.getName()));
     }
 
     @GetMapping

@@ -9,9 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import br.com.doceterapia.api.config.GerenciadorTokenJwt;
 import br.com.doceterapia.api.dto.UsuarioListarDto;
+import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
 import br.com.doceterapia.api.dto.UsuarioMapper;
 import br.com.doceterapia.api.dto.UsuarioTokenDto;
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.exception.UsuarioLogadoNotFoundException;
 import br.com.doceterapia.api.repository.UsuarioRepository;
 
 import java.util.List;
@@ -54,6 +56,12 @@ public class UsuarioService {
         final String token = gerenciadorTokenJwt.generateToken(authentication);
 
         return UsuarioMapper.of(usuarioAutenticado, token);
+    }
+
+    public UsuarioLogadoResponseDTO buscarUsuarioLogado(String email) {
+        return usuarioRepository.findByEmail(email)
+                .map(UsuarioMapper::toUsuarioLogadoResponse)
+                .orElseThrow(UsuarioLogadoNotFoundException::new);
     }
 
     public List<UsuarioListarDto> listarTodos() {

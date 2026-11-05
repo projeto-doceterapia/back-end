@@ -14,13 +14,15 @@ import java.io.IOException;
 @Component
 public class AutenticacaoEntryPoint implements AuthenticationEntryPoint {
 
+    private static final String MENSAGEM_SESSAO_AUSENTE = "Sessão ausente ou expirada. Entre novamente.";
+
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException, ServletException {
 
         if (authException instanceof BadCredentialsException
                 || authException instanceof InsufficientAuthenticationException) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, MENSAGEM_SESSAO_AUSENTE);
         } else {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
         }

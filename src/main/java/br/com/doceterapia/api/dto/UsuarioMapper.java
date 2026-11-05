@@ -44,4 +44,12 @@ public class UsuarioMapper {
         dto.setEmail(usuario.getEmail());
         return dto;
     }
+
+    public static UsuarioLogadoResponseDTO toUsuarioLogadoResponse(Usuario usuario) {
+        UsuarioLogadoResponseDTO dto = new UsuarioLogadoResponseDTO();
+        dto.setId(usuario.getId());
+        dto.setNome(usuario.getNome());
+        dto.setEmail(usuario.getEmail());
+        return dto;
+    }
 }

@@ -1,6 +1,7 @@
 package br.com.doceterapia.api.swagger;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -10,9 +11,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import br.com.doceterapia.api.dto.UsuarioCriacaoDto;
 import br.com.doceterapia.api.dto.UsuarioListarDto;
 import br.com.doceterapia.api.dto.UsuarioLoginDto;
+import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
 import br.com.doceterapia.api.dto.UsuarioSessaoDto;
 
 import java.util.List;
@@ -69,6 +72,19 @@ public interface UsuarioControllerOpenApi {
     })
     @SecurityRequirement(name = "Bearer")
     ResponseEntity<Void> logout(HttpServletResponse response);
+
+    @Operation(
+            summary = "Consultar o usuário logado",
+            description = "Retorna os dados do usuário da sessão atual, identificada pelo cookie `authToken` ou pelo header `Authorization: Bearer`."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuário logado",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UsuarioLogadoResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Sessão ausente ou expirada")
+    })
+    @SecurityRequirement(name = "Bearer")
+    ResponseEntity<UsuarioLogadoResponseDTO> buscarUsuarioLogado(@Parameter(hidden = true) Authentication authentication);
 
     @Operation(
             summary = "Listar todos os usuários",
