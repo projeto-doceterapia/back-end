@@ -47,6 +47,7 @@ Opcionais:
 | `JWT_VALIDITY` | `3600` | Validade do token JWT em segundos |
 | `NOTIFICACAO_INTERVALO_VERIFICACAO_MS` | `300000` | Intervalo (ms) da verificação agendada dos resumos diários |
 | `ASSISTENTE_FUSO_HORARIO` | `America/Sao_Paulo` | Fuso horário usado para calcular os limites de dia e de expediente das notificações |
+| `COOKIE_SECURE` | `false` | Atributo `secure` do cookie de sessão, no login e no logout. Use `true` só com HTTPS na frente da aplicação |
 
 ## Execução
 
@@ -112,11 +113,12 @@ docker stop mysql-schema-teste
 
 ## Endpoints
 
-Rotas sem versionamento, autenticadas por cookie de sessão (exceto login/cadastro).
+Rotas sem versionamento. A sessão vem do cookie `authToken` ou do header
+`Authorization: Bearer`. `POST /usuarios/login` e `POST /usuarios/logout` são públicas.
 
 | Recurso | Base | Operações |
 |---------|------|-----------|
-| Usuários / Autenticação | `/usuarios` | `POST` cadastro, `POST /login`, `POST /logout`, `GET` perfil |
+| Usuários / Autenticação | `/usuarios` | `POST` cadastro (exige sessão; e-mail repetido devolve 409), `POST /login`, `POST /logout` (sempre 204, com ou sem sessão), `GET /me` usuário logado, `GET` lista |
 | Clientes | `/clientes` | CRUD |
 | Categorias de produto | `/categorias-produto` | CRUD |
 | Produtos | `/produtos` | CRUD |
@@ -159,6 +161,8 @@ A configuração fica em `/configuracao-notificacao` (linha única):
 
 ## Limitações conhecidas
 
+- **Primeiro usuário:** o cadastro exige sessão e ainda não há criação automática do
+  primeiro usuário. Com a tabela `usuario` vazia, ninguém consegue entrar.
 - **Insumos por nome e unidade:** não há índice único em `(nome_normalizado, unidade)`.
   Em `POST /insumos/obter-ou-criar` concorrente, duas requisições com o mesmo nome e
   unidade podem criar insumos duplicados. A correção definitiva exige mudança de schema.
