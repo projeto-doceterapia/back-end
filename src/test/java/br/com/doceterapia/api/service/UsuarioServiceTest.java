@@ -1,9 +1,12 @@
 package br.com.doceterapia.api.service;
 
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,6 +20,7 @@ import br.com.doceterapia.api.config.GerenciadorTokenJwt;
 import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
 import br.com.doceterapia.api.dto.UsuarioTokenDto;
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.enums.ResultadoUsuarioInicial;
 import br.com.doceterapia.api.exception.UsuarioEmailAlreadyExistsException;
 import br.com.doceterapia.api.exception.UsuarioLogadoNotFoundException;
 import br.com.doceterapia.api.repository.UsuarioRepository;
@@ -160,6 +164,99 @@ class UsuarioServiceTest {
         // Act & Assert
         assertThrows(UsuarioLogadoNotFoundException.class,
                 () -> usuarioService.buscarUsuarioLogado("joao@example.com"));
+    }
+
+    private UsuarioService servicoComValidacaoReal() {
+        Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+        return new UsuarioService(passwordEncoder, usuarioRepository, gerenciadorTokenJwt,
+                authenticationManager, validator);
+    }
+
+    @Test
+    @DisplayName("Tabela vazia e variáveis válidas: grava com a senha codificada")
+    void criarUsuarioInicialComTabelaVaziaCriaUsuario() {
+        // Arrange
+        when(usuarioRepository.count()).thenReturn(0L);
+        when(passwordEncoder.encode("SenhaFicticia1")).thenReturn(senhaCriptografada);
+
+        // Act
+        ResultadoUsuarioInicial resultado = servicoComValidacaoReal()
+                .criarUsuarioInicial("Dona Exemplo", "dona@exemplo.com", "SenhaFicticia1");
+
+        // Assert
+        ArgumentCaptor<Usuario> gravado = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).save(gravado.capture());
+        assertEquals(ResultadoUsuarioInicial.CRIADO, resultado);
+        assertEquals("Dona Exemplo", gravado.getValue().getNome());
+        assertEquals("dona@exemplo.com", gravado.getValue().getEmail());
+        assertEquals(senhaCriptografada, gravado.getValue().getSenha());
+    }
+
+    @Test
+    @DisplayName("Nome ausente ou em branco: usa o nome padrão")
+    void criarUsuarioInicialSemNomeUsaPadrao() {
+        // Arrange
+        when(usuarioRepository.count()).thenReturn(0L);
+        UsuarioService servico = servicoComValidacaoReal();
+
+        // Act
+        servico.criarUsuarioInicial("", "dona@exemplo.com", "SenhaFicticia1");
+        servico.criarUsuarioInicial(null, "dona2@exemplo.com", "SenhaFicticia1");
+
+        // Assert
+        ArgumentCaptor<Usuario> gravados = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository, times(2)).save(gravados.capture());
+        assertEquals("Dona", gravados.getAllValues().get(0).getNome());
+        assertEquals("Dona", gravados.getAllValues().get(1).getNome());
+    }
+
+    @Test
+    @DisplayName("Com usuários existentes: ignora as variáveis e não grava")
+    void criarUsuarioInicialComUsuariosExistentesIgnora() {
+        // Arrange
+        when(usuarioRepository.count()).thenReturn(1L);
+
+        // Act
+        ResultadoUsuarioInicial resultado = servicoComValidacaoReal()
+                .criarUsuarioInicial("Dona Exemplo", "dona@exemplo.com", "SenhaFicticia1");
+
+        // Assert
+        assertEquals(ResultadoUsuarioInicial.IGNORADO_USUARIOS_EXISTENTES, resultado);
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Tabela vazia e e-mail ou senha em branco: não grava")
+    void criarUsuarioInicialComVariaveisAusentesNaoCria() {
+        // Arrange
+        when(usuarioRepository.count()).thenReturn(0L);
+        UsuarioService servico = servicoComValidacaoReal();
+
+        // Act & Assert
+        assertEquals(ResultadoUsuarioInicial.VARIAVEIS_AUSENTES,
+                servico.criarUsuarioInicial("Dona Exemplo", "", "SenhaFicticia1"));
+        assertEquals(ResultadoUsuarioInicial.VARIAVEIS_AUSENTES,
+                servico.criarUsuarioInicial("Dona Exemplo", "dona@exemplo.com", " "));
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Tabela vazia e variáveis inválidas: não grava")
+    void criarUsuarioInicialComVariaveisInvalidasNaoCria() {
+        // Arrange
+        when(usuarioRepository.count()).thenReturn(0L);
+        UsuarioService servico = servicoComValidacaoReal();
+
+        // Act & Assert
+        assertEquals(ResultadoUsuarioInicial.VARIAVEIS_INVALIDAS,
+                servico.criarUsuarioInicial("Dona Exemplo", "dona@exemplo.com", "123"));
+        assertEquals(ResultadoUsuarioInicial.VARIAVEIS_INVALIDAS,
+                servico.criarUsuarioInicial("Dona Exemplo", "email-invalido", "SenhaFicticia1"));
+        assertEquals(ResultadoUsuarioInicial.VARIAVEIS_INVALIDAS,
+                servico.criarUsuarioInicial("Do", "dona@exemplo.com", "SenhaFicticia1"));
+        assertEquals(ResultadoUsuarioInicial.VARIAVEIS_INVALIDAS,
+                servico.criarUsuarioInicial("D".repeat(51), "dona@exemplo.com", "SenhaFicticia1"));
+        verify(usuarioRepository, never()).save(any(Usuario.class));
     }
 
     @Test
