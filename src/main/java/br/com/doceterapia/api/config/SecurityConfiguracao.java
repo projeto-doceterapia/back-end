@@ -68,7 +68,6 @@ public class SecurityConfiguracao {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(URLS_PERMITIDAS).permitAll()
                         .requestMatchers("/clientes/**", "/pedidos/**", "/pagamentos/**", "/cancelamentos/**", "/categorias-produto/**", "/produtos/**", "/categorias-insumo/**", "/insumos/**", "/itens-pedido/**", "/producoes/**", "/notificacoes/**", "/configuracao-farol/**", "/configuracao-notificacao/**", "/estoque/**", "/notas-fiscais/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll() // cadastro público
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(handling -> handling

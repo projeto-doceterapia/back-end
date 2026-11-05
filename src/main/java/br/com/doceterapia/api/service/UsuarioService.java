@@ -13,6 +13,7 @@ import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
 import br.com.doceterapia.api.dto.UsuarioMapper;
 import br.com.doceterapia.api.dto.UsuarioTokenDto;
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.exception.UsuarioEmailAlreadyExistsException;
 import br.com.doceterapia.api.exception.UsuarioLogadoNotFoundException;
 import br.com.doceterapia.api.repository.UsuarioRepository;
 
@@ -37,6 +38,10 @@ public class UsuarioService {
     }
 
     public void criar(Usuario novoUsuario) {
+        if (usuarioRepository.existsByEmailIgnoreCase(novoUsuario.getEmail())) {
+            throw new UsuarioEmailAlreadyExistsException();
+        }
+
         String senhaCriptografada = passwordEncoder.encode(novoUsuario.getSenha());
         novoUsuario.setSenha(senhaCriptografada);
         this.usuarioRepository.save(novoUsuario);

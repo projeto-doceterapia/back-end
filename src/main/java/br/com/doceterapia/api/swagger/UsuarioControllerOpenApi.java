@@ -25,7 +25,7 @@ public interface UsuarioControllerOpenApi {
 
     @Operation(
             summary = "Cadastrar novo usuário",
-            description = "Cria um novo usuário no sistema com os dados fornecidos. A senha é armazenada com hash BCrypt."
+            description = "Cria um novo usuário no sistema com os dados fornecidos; requer usuário autenticado. A senha é armazenada com hash BCrypt."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuário cadastrado com sucesso"),
@@ -33,9 +33,11 @@ public interface UsuarioControllerOpenApi {
                     "- Nome com menos de 3 ou mais de 50 caracteres\n" +
                     "- E-mail inválido\n" +
                     "- Senha com menos de 6 ou mais de 20 caracteres"),
-            @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+            @ApiResponse(responseCode = "401", description = "Sessão ausente ou expirada"),
+            @ApiResponse(responseCode = "409", description = "Já existe um usuário com este e-mail"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
+    @SecurityRequirement(name = "Bearer")
     ResponseEntity<Void> criar(
             @RequestBody(description = "Dados do usuário a ser cadastrado", required = true,
                     content = @Content(schema = @Schema(implementation = UsuarioCriacaoDto.class)))
