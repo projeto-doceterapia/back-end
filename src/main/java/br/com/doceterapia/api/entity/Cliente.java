@@ -26,12 +26,15 @@ public class Cliente {
     private String endereco;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private TipoPessoa tipoPessoa;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private ClassificacaoCliente classificacaoCliente;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private StatusAtivo status;
 
     @Column(columnDefinition = "TEXT")

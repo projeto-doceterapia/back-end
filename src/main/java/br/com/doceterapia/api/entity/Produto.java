@@ -39,9 +39,11 @@ public class Produto {
     private BigDecimal margemLucro;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private UnidadeMedida unidadeProducao;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private StatusAtivo status;
 
     private Integer quantidadeProduzida;
