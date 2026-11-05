@@ -1,6 +1,5 @@
 package br.com.doceterapia.api.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,17 +19,20 @@ import java.util.List;
 @Service
 public class UsuarioService {
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final UsuarioRepository usuarioRepository;
+    private final GerenciadorTokenJwt gerenciadorTokenJwt;
+    private final AuthenticationManager authenticationManager;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private GerenciadorTokenJwt gerenciadorTokenJwt;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    public UsuarioService(PasswordEncoder passwordEncoder,
+                          UsuarioRepository usuarioRepository,
+                          GerenciadorTokenJwt gerenciadorTokenJwt,
+                          AuthenticationManager authenticationManager) {
+        this.passwordEncoder = passwordEncoder;
+        this.usuarioRepository = usuarioRepository;
+        this.gerenciadorTokenJwt = gerenciadorTokenJwt;
+        this.authenticationManager = authenticationManager;
+    }
 
     public void criar(Usuario novoUsuario) {
         String senhaCriptografada = passwordEncoder.encode(novoUsuario.getSenha());

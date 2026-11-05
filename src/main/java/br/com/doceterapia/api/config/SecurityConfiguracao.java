@@ -1,6 +1,5 @@
 package br.com.doceterapia.api.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -31,11 +30,8 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfiguracao {
 
-    @Autowired
-    private AutenticacaoService autenticacaoService;
-
-    @Autowired
-    private AutenticacaoEntryPoint autenticacaoJwtEntryPoint;
+    private final AutenticacaoService autenticacaoService;
+    private final AutenticacaoEntryPoint autenticacaoJwtEntryPoint;
 
     private static final String[] URLS_PERMITIDAS = {
             "/swagger-ui/**",
@@ -55,6 +51,12 @@ public class SecurityConfiguracao {
             "/h2-console/*/**",
             "/error/**"
     };
+
+    public SecurityConfiguracao(AutenticacaoService autenticacaoService,
+                                AutenticacaoEntryPoint autenticacaoJwtEntryPoint) {
+        this.autenticacaoService = autenticacaoService;
+        this.autenticacaoJwtEntryPoint = autenticacaoJwtEntryPoint;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

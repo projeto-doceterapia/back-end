@@ -3,13 +3,11 @@ package br.com.doceterapia.api.controller;
 import br.com.doceterapia.api.dto.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import br.com.doceterapia.api.dto.*;
 import br.com.doceterapia.api.entity.Usuario;
 import br.com.doceterapia.api.service.UsuarioService;
 import br.com.doceterapia.api.swagger.UsuarioControllerOpenApi;
@@ -23,11 +21,13 @@ public class UsuarioController implements UsuarioControllerOpenApi {
 
     public static final String COOKIE_NOME = "authToken";
 
-    @Value("${jwt.validity}")
-    private long jwtValidity;
+    private final long jwtValidity;
+    private final UsuarioService usuarioService;
 
-    @Autowired
-    private UsuarioService usuarioService;
+    public UsuarioController(@Value("${jwt.validity}") long jwtValidity, UsuarioService usuarioService) {
+        this.jwtValidity = jwtValidity;
+        this.usuarioService = usuarioService;
+    }
 
     @PostMapping
     @Override
