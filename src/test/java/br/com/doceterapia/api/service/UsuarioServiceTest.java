@@ -14,10 +14,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import br.com.doceterapia.api.config.GerenciadorTokenJwt;
+import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
 import br.com.doceterapia.api.dto.UsuarioTokenDto;
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.exception.UsuarioLogadoNotFoundException;
 import br.com.doceterapia.api.repository.UsuarioRepository;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -115,6 +118,34 @@ class UsuarioServiceTest {
 
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(usuarioRepository).findByEmail(usuario.getEmail());
+    }
+
+    @Test
+    @DisplayName("Deve devolver os dados do usuário logado sem a senha")
+    void buscarUsuarioLogadoRetornaDadosSemSenha() {
+        // Arrange
+        when(usuarioRepository.findByEmail("joao@example.com")).thenReturn(Optional.of(usuario));
+
+        // Act
+        UsuarioLogadoResponseDTO resultado = usuarioService.buscarUsuarioLogado("joao@example.com");
+
+        // Assert
+        assertEquals(1L, resultado.getId());
+        assertEquals("João Silva", resultado.getNome());
+        assertEquals("joao@example.com", resultado.getEmail());
+        assertTrue(Arrays.stream(UsuarioLogadoResponseDTO.class.getDeclaredFields())
+                .noneMatch(campo -> campo.getName().equals("senha")));
+    }
+
+    @Test
+    @DisplayName("Deve recusar a sessão quando o usuário logado não existir mais")
+    void buscarUsuarioLogadoInexistenteLancaExcecao() {
+        // Arrange
+        when(usuarioRepository.findByEmail("joao@example.com")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(UsuarioLogadoNotFoundException.class,
+                () -> usuarioService.buscarUsuarioLogado("joao@example.com"));
     }
 
     @Test
