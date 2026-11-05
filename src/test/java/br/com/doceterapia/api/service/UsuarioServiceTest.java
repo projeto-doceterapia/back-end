@@ -17,6 +17,7 @@ import br.com.doceterapia.api.config.GerenciadorTokenJwt;
 import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
 import br.com.doceterapia.api.dto.UsuarioTokenDto;
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.exception.UsuarioEmailAlreadyExistsException;
 import br.com.doceterapia.api.exception.UsuarioLogadoNotFoundException;
 import br.com.doceterapia.api.repository.UsuarioRepository;
 
@@ -74,6 +75,19 @@ class UsuarioServiceTest {
         verify(passwordEncoder).encode(senhaOriginal);
         verify(usuarioRepository).save(any(Usuario.class));
         assertEquals(senhaCriptografada, usuario.getSenha());
+    }
+
+    @Test
+    @DisplayName("Deve recusar e-mail já cadastrado sem gravar")
+    void criarEmailDuplicadoLancaExcecao() {
+        // Arrange
+        when(usuarioRepository.existsByEmailIgnoreCase(usuario.getEmail())).thenReturn(true);
+
+        // Act & Assert
+        assertThrows(UsuarioEmailAlreadyExistsException.class, () -> usuarioService.criar(usuario));
+
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(passwordEncoder, never()).encode(any());
     }
 
     @Test
