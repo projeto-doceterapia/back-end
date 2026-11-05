@@ -1,0 +1,5 @@
+# Fictitious JWT value of the test profile, present only in old commits.
+aa7e580279420f328f8c8e60feedf7f78e5ceaff:src/test/resources/application.properties:generic-api-key:3
+5fc70b3b443a61160cec03aeb61d49f693526372:src/test/resources/application.properties:generic-api-key:3
+a561ff269e51be3b7f85fbcf8d706d087685478f:src/test/resources/application.properties:generic-api-key:3
+09172dfd7337bcb5dffc7e28cd0b7fb3fcf3053f:src/test/resources/application.properties:generic-api-key:3
