@@ -89,7 +89,7 @@ Rotas sem versionamento, autenticadas por cookie de sessão (exceto login/cadast
 | Estoque | `/estoque/movimentos` | `POST` entrada de compra, `GET` histórico |
 | Notas fiscais | `/notas-fiscais/{chave}/status` | `GET` status |
 | Farol da agenda | `/configuracao-farol` | `POST`, `GET`, `PUT` |
-| Notificações | `/notificacoes` | CRUD, `PATCH /{id}/marcar-lida`, `GET /nao-lidas`, `GET /stream` (SSE), `GET /agenda`, `POST /{id}/confirmacao-envio` |
+| Notificações | `/notificacoes` | CRUD, `PATCH /{id}/marcar-lida`, `GET /nao-lidas`, `GET /stream` (SSE), `GET /agenda`, `POST /{id}/confirmacao-envio`, `POST /teste` (notificação de teste, com intervalo mínimo) |
 | Configuração de notificações | `/configuracao-notificacao` | `GET`, `PUT` |
 
 ## Notificações
@@ -114,14 +114,21 @@ A configuração fica em `/configuracao-notificacao` (linha única):
 | `diasAntecedencia` | `3` | Dias à frente no resumo de fim do dia |
 | `resumoInicioDiaAtivo` / `resumoFimDiaAtivo` | `true` | Habilita cada resumo |
 | `alertaEstoqueBaixoAtivo` / `alertaDiaLotadoAtivo` | `true` | Habilita cada alerta imediato |
+| `avisosAutomaticosAtivo` | `true` | Desligado, os avisos são criados só para o sino (`NAO_ENVIAR`) e os pendentes são descartados |
+| `assistenteAtivo` | `true` | Como o anterior, e o orquestrador também pausa a conversa e a leitura de notas |
+
+`POST /notificacoes/teste` cria um aviso de teste com janela imediata. Um novo teste antes do
+intervalo mínimo (`assistente.notificacao.teste-cooldown-s`, padrão 300 s) responde 429 com
+`segundosRestantes`.
 
 ## Limitações conhecidas
 
 - **Insumos por nome e unidade:** não há índice único em `(nome_normalizado, unidade)`.
   Em `POST /insumos/obter-ou-criar` concorrente, duas requisições com o mesmo nome e
   unidade podem criar insumos duplicados. A correção definitiva exige mudança de schema.
-- **Linha única de configuração:** as configurações de notificação e do farol da agenda
-  assumem uma única linha, sem restrição de unicidade que a garanta.
+- **Linha única de configuração:** o serviço de notificação sempre usa a linha mais antiga e
+  serializa a primeira criação, o que basta para uma instância. A configuração do farol da
+  agenda assume uma única linha, sem restrição de unicidade que a garanta.
 - **Autenticação das novas rotas:** as rotas de estoque, catálogo e notificações seguem o
   mesmo modelo das demais e não exigem autenticação própria.
 - **Instância única:** o registro de conexões SSE e os jobs agendados assumem uma única

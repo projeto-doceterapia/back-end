@@ -47,6 +47,12 @@ public class ConfiguracaoNotificacao {
     @Column(nullable = false)
     private Boolean alertaDiaLotadoAtivo = true;
 
+    @Column(nullable = false)
+    private Boolean avisosAutomaticosAtivo = true;
+
+    @Column(nullable = false)
+    private Boolean assistenteAtivo = true;
+
     public Integer getIdConfiguracaoNotificacao() {
         return idConfiguracaoNotificacao;
     }
@@ -133,5 +139,21 @@ public class ConfiguracaoNotificacao {
 
     public void setAlertaDiaLotadoAtivo(Boolean alertaDiaLotadoAtivo) {
         this.alertaDiaLotadoAtivo = alertaDiaLotadoAtivo;
+    }
+
+    public Boolean getAvisosAutomaticosAtivo() {
+        return avisosAutomaticosAtivo;
+    }
+
+    public void setAvisosAutomaticosAtivo(Boolean avisosAutomaticosAtivo) {
+        this.avisosAutomaticosAtivo = avisosAutomaticosAtivo;
+    }
+
+    public Boolean getAssistenteAtivo() {
+        return assistenteAtivo;
+    }
+
+    public void setAssistenteAtivo(Boolean assistenteAtivo) {
+        this.assistenteAtivo = assistenteAtivo;
     }
 }
