@@ -4,6 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -49,6 +52,36 @@ class NotificacaoEmitterRegistryTest {
         assertThat(heartbeatTask).as("tarefa de heartbeat agendada").isNotNull();
         heartbeatTask.run();
 
+        assertThat(registry.conexoesAtivas()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Uma conexão já derrubada pelo contêiner não impede o envio às conexões abertas")
+    void conexaoMortaNaoInterrompeEnvio() {
+        SseEmitter morta = new SseEmitter(0L) {
+            @Override
+            public synchronized void send(SseEventBuilder builder) throws IOException {
+                throw new IOException("connection reset");
+            }
+
+            @Override
+            public synchronized void completeWithError(Throwable ex) {
+                throw new IllegalStateException("AsyncContext already failed");
+            }
+        };
+        int[] recebidos = {0};
+        SseEmitter viva = new SseEmitter(0L) {
+            @Override
+            public synchronized void send(SseEventBuilder builder) {
+                recebidos[0]++;
+            }
+        };
+        registry.registrar(morta);
+        registry.registrar(viva);
+
+        registry.enviar("notificacao", "dados");
+
+        assertThat(recebidos[0]).isEqualTo(1);
         assertThat(registry.conexoesAtivas()).isEqualTo(1);
     }
 }
