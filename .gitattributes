@@ -1,2 +1,5 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+
+# Generated migration: its bytes are compared with the generator output.
+src/main/resources/db/demo/*.sql text eol=lf

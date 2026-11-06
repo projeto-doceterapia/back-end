@@ -51,3 +51,6 @@ dumps/
 dump-*.sql
 *.sql.gz
 *.sql.zip
+
+### Python ###
+__pycache__/
