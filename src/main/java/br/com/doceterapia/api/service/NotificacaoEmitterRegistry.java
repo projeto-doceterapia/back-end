@@ -85,7 +85,12 @@ public class NotificacaoEmitterRegistry {
 
     private void removerComFalha(SseEmitter emitter, Throwable causa) {
         emitters.remove(emitter);
-        emitter.completeWithError(causa);
+        try {
+            emitter.completeWithError(causa);
+        } catch (IllegalStateException ignorada) {
+            // The container already dropped this connection and refuses further use.
+            // Letting it escape would stop the loop and skip the connections still open.
+        }
     }
 
     @PreDestroy
