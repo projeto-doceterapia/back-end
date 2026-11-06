@@ -1,6 +1,7 @@
 package br.com.doceterapia.api.swagger;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -10,9 +11,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import br.com.doceterapia.api.dto.UsuarioCriacaoDto;
 import br.com.doceterapia.api.dto.UsuarioListarDto;
 import br.com.doceterapia.api.dto.UsuarioLoginDto;
+import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
 import br.com.doceterapia.api.dto.UsuarioSessaoDto;
 
 import java.util.List;
@@ -22,7 +25,7 @@ public interface UsuarioControllerOpenApi {
 
     @Operation(
             summary = "Cadastrar novo usuário",
-            description = "Cria um novo usuário no sistema com os dados fornecidos. A senha é armazenada com hash BCrypt."
+            description = "Cria um novo usuário no sistema com os dados fornecidos; requer usuário autenticado. A senha é armazenada com hash BCrypt."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuário cadastrado com sucesso"),
@@ -30,9 +33,11 @@ public interface UsuarioControllerOpenApi {
                     "- Nome com menos de 3 ou mais de 50 caracteres\n" +
                     "- E-mail inválido\n" +
                     "- Senha com menos de 6 ou mais de 20 caracteres"),
-            @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+            @ApiResponse(responseCode = "401", description = "Sessão ausente ou expirada"),
+            @ApiResponse(responseCode = "409", description = "Já existe um usuário com este e-mail"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
+    @SecurityRequirement(name = "Bearer")
     ResponseEntity<Void> criar(
             @RequestBody(description = "Dados do usuário a ser cadastrado", required = true,
                     content = @Content(schema = @Schema(implementation = UsuarioCriacaoDto.class)))
@@ -59,16 +64,27 @@ public interface UsuarioControllerOpenApi {
 
     @Operation(
             summary = "Encerrar sessão",
-            description = "Invalida a sessão do usuário autenticado removendo o cookie `authToken` do browser (Max-Age=0). " +
+            description = "Remove o cookie `authToken` do browser (Max-Age=0). Rota pública e idempotente: funciona sem sessão e com token expirado. " +
                     "O token JWT permanece tecnicamente válido até expirar, por isso use tokens de curta duração em produção."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Logout realizado com sucesso. Cookie removido."),
-            @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    @SecurityRequirement(name = "Bearer")
     ResponseEntity<Void> logout(HttpServletResponse response);
+
+    @Operation(
+            summary = "Consultar o usuário logado",
+            description = "Retorna os dados do usuário da sessão atual, identificada pelo cookie `authToken` ou pelo header `Authorization: Bearer`."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuário logado",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UsuarioLogadoResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Sessão ausente ou expirada")
+    })
+    @SecurityRequirement(name = "Bearer")
+    ResponseEntity<UsuarioLogadoResponseDTO> buscarUsuarioLogado(@Parameter(hidden = true) Authentication authentication);
 
     @Operation(
             summary = "Listar todos os usuários",

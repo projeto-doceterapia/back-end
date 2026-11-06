@@ -1,6 +1,5 @@
 package br.com.doceterapia.api.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -31,11 +30,8 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfiguracao {
 
-    @Autowired
-    private AutenticacaoService autenticacaoService;
-
-    @Autowired
-    private AutenticacaoEntryPoint autenticacaoJwtEntryPoint;
+    private final AutenticacaoService autenticacaoService;
+    private final AutenticacaoEntryPoint autenticacaoJwtEntryPoint;
 
     private static final String[] URLS_PERMITIDAS = {
             "/swagger-ui/**",
@@ -51,10 +47,17 @@ public class SecurityConfiguracao {
             "/actuator/*",
             "/usuarios/login",
             "/usuarios/login/**",
+            "/usuarios/logout",
             "/h2-console/**",
             "/h2-console/*/**",
             "/error/**"
     };
+
+    public SecurityConfiguracao(AutenticacaoService autenticacaoService,
+                                AutenticacaoEntryPoint autenticacaoJwtEntryPoint) {
+        this.autenticacaoService = autenticacaoService;
+        this.autenticacaoJwtEntryPoint = autenticacaoJwtEntryPoint;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -66,7 +69,6 @@ public class SecurityConfiguracao {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(URLS_PERMITIDAS).permitAll()
                         .requestMatchers("/clientes/**", "/pedidos/**", "/pagamentos/**", "/cancelamentos/**", "/categorias-produto/**", "/produtos/**", "/categorias-insumo/**", "/insumos/**", "/itens-pedido/**", "/producoes/**", "/notificacoes/**", "/configuracao-farol/**", "/configuracao-notificacao/**", "/estoque/**", "/notas-fiscais/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll() // cadastro público
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(handling -> handling

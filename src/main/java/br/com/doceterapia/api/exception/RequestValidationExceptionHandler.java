@@ -17,10 +17,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Translates malformed-request errors into the project's standard error body
- * with a PT-BR {@code message}. It only handles request parsing and bean
- * validation failures, which Spring already maps to 400, so existing endpoints
- * keep their status codes while the front-end gets a readable message.
+ * Translates request parsing and bean validation failures, which Spring already
+ * maps to 400, and the domain errors listed below into the project's standard
+ * error body with a PT-BR {@code message}.
  */
 @RestControllerAdvice
 public class RequestValidationExceptionHandler {
@@ -54,6 +53,12 @@ public class RequestValidationExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleConfiguracaoInvalida(
             ConfiguracaoNotificacaoInvalidaException ex, HttpServletRequest request) {
         return construir(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(UsuarioEmailAlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleUsuarioEmailDuplicado(
+            UsuarioEmailAlreadyExistsException ex, HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler(NotificacaoTesteCooldownException.class)

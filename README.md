@@ -47,6 +47,27 @@ Opcionais:
 | `JWT_VALIDITY` | `3600` | Validade do token JWT em segundos |
 | `NOTIFICACAO_INTERVALO_VERIFICACAO_MS` | `300000` | Intervalo (ms) da verificação agendada dos resumos diários |
 | `ASSISTENTE_FUSO_HORARIO` | `America/Sao_Paulo` | Fuso horário usado para calcular os limites de dia e de expediente das notificações |
+| `ADMIN_NOME` | `Dona` | Nome do primeiro usuário, de 3 a 50 caracteres. Em branco vale o default |
+| `ADMIN_EMAIL` | vazio | E-mail do primeiro usuário. Necessário só na primeira subida |
+| `ADMIN_SENHA` | vazio | Senha do primeiro usuário, de 6 a 20 caracteres. Necessária só na primeira subida; apague depois |
+| `COOKIE_SECURE` | `false` | Atributo `secure` do cookie de sessão, no login e no logout. Use `true` só com HTTPS na frente da aplicação |
+
+## Primeiro usuário
+
+O cadastro (`POST /usuarios`) exige sessão, então o primeiro usuário nasce na subida da
+aplicação, a partir de `ADMIN_EMAIL` e `ADMIN_SENHA`, com o nome de `ADMIN_NOME`:
+
+| Situação na subida | O que acontece | Log |
+|--------------------|----------------|-----|
+| Tabela `usuario` vazia e variáveis válidas | Cria o usuário, com a senha em BCrypt | `INFO` pedindo para remover `ADMIN_SENHA` |
+| Tabela vazia e `ADMIN_EMAIL` ou `ADMIN_SENHA` em branco | Não cria; ninguém consegue entrar | `WARN` citando as variáveis |
+| Tabela vazia e algum valor inválido | Não cria | `ERROR` citando as regras |
+| Já existem usuários | Ignora as variáveis | `WARN` se `ADMIN_SENHA` estiver preenchida |
+
+A aplicação sobe em todos os casos, e o log nunca traz os valores das variáveis. Depois da
+primeira subida, apague `ADMIN_SENHA` do ambiente. Os próximos usuários são criados por um
+usuário logado. No perfil `local`, o H2 começa vazio a cada subida, então o usuário é criado
+de novo sempre que as variáveis estiverem definidas.
 
 ## Execução
 
@@ -112,11 +133,12 @@ docker stop mysql-schema-teste
 
 ## Endpoints
 
-Rotas sem versionamento, autenticadas por cookie de sessão (exceto login/cadastro).
+Rotas sem versionamento. A sessão vem do cookie `authToken` ou do header
+`Authorization: Bearer`. `POST /usuarios/login` e `POST /usuarios/logout` são públicas.
 
 | Recurso | Base | Operações |
 |---------|------|-----------|
-| Usuários / Autenticação | `/usuarios` | `POST` cadastro, `POST /login`, `POST /logout`, `GET` perfil |
+| Usuários / Autenticação | `/usuarios` | `POST` cadastro (exige sessão; e-mail repetido devolve 409), `POST /login`, `POST /logout` (sempre 204, com ou sem sessão), `GET /me` usuário logado, `GET` lista |
 | Clientes | `/clientes` | CRUD |
 | Categorias de produto | `/categorias-produto` | CRUD |
 | Produtos | `/produtos` | CRUD |

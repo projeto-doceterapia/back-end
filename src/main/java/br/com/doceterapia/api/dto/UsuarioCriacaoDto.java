@@ -1,17 +1,21 @@
 package br.com.doceterapia.api.dto;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public class UsuarioCriacaoDto {
 
-    @Size(min = 3, max = 50)
+    @NotBlank(message = "Informe o nome.")
+    @Size(min = 3, max = 50, message = "O nome deve ter de 3 a 50 caracteres.")
     private String nome;
 
-    @Email
+    @NotBlank(message = "Informe o e-mail.")
+    @Email(message = "Informe um e-mail válido.")
     private String email;
 
-    @Size(min = 6, max = 20)
+    @NotBlank(message = "Informe a senha.")
+    @Size(min = 6, max = 20, message = "A senha deve ter de 6 a 20 caracteres.")
     private String senha;
 
     public String getNome() {

@@ -1,20 +1,17 @@
 package br.com.doceterapia.api.controller;
 
+import br.com.doceterapia.api.config.GerenciadorCookieSessao;
 import br.com.doceterapia.api.dto.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import br.com.doceterapia.api.dto.*;
 import br.com.doceterapia.api.entity.Usuario;
 import br.com.doceterapia.api.service.UsuarioService;
 import br.com.doceterapia.api.swagger.UsuarioControllerOpenApi;
 
-import java.time.Duration;
 import java.util.List;
 
 @RestController
@@ -23,11 +20,13 @@ public class UsuarioController implements UsuarioControllerOpenApi {
 
     public static final String COOKIE_NOME = "authToken";
 
-    @Value("${jwt.validity}")
-    private long jwtValidity;
+    private final UsuarioService usuarioService;
+    private final GerenciadorCookieSessao gerenciadorCookieSessao;
 
-    @Autowired
-    private UsuarioService usuarioService;
+    public UsuarioController(UsuarioService usuarioService, GerenciadorCookieSessao gerenciadorCookieSessao) {
+        this.usuarioService = usuarioService;
+        this.gerenciadorCookieSessao = gerenciadorCookieSessao;
+    }
 
     @PostMapping
     @Override
@@ -46,15 +45,7 @@ public class UsuarioController implements UsuarioControllerOpenApi {
         final Usuario usuario = UsuarioMapper.of(usuarioLoginDto);
         UsuarioTokenDto autenticado = this.usuarioService.autenticar(usuario);
 
-        ResponseCookie cookie = ResponseCookie.from(COOKIE_NOME, autenticado.getToken())
-                .httpOnly(true)
-                .secure(false) // true em produção (exige HTTPS)
-                .sameSite("Strict")
-                .path("/")
-                .maxAge(Duration.ofSeconds(jwtValidity))
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, gerenciadorCookieSessao.criar(autenticado.getToken()).toString());
 
         UsuarioSessaoDto sessao = UsuarioMapper.ofSessao(autenticado);
         return ResponseEntity.ok(sessao);
@@ -63,16 +54,14 @@ public class UsuarioController implements UsuarioControllerOpenApi {
     @PostMapping("/logout")
     @Override
     public ResponseEntity<Void> logout(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from(COOKIE_NOME, "")
-                .httpOnly(true)
-                .secure(false)
-                .sameSite("Strict")
-                .path("/")
-                .maxAge(0)
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, gerenciadorCookieSessao.remover().toString());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    @Override
+    public ResponseEntity<UsuarioLogadoResponseDTO> buscarUsuarioLogado(Authentication authentication) {
+        return ResponseEntity.ok(this.usuarioService.buscarUsuarioLogado(authentication.getName()));
     }
 
     @GetMapping
