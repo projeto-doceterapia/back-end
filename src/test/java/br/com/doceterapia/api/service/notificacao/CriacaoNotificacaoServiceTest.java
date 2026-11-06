@@ -270,11 +270,4 @@ class CriacaoNotificacaoServiceTest {
         assertSame(existente, resultado);
         verify(eventPublisher, never()).publishEvent(any(Object.class));
     }
-
-    private ComandoNotificacao comandoEstoqueBaixo() {
-        return ComandoNotificacao.imediata(
-                TipoNotificacao.ESTOQUE_BAIXO, "Estoque baixo", "Farinha baixa",
-                "ESTOQUE_BAIXO:insumo:1:2026-10-21", "estoque_baixo",
-                new ParametrosTeste("Farinha", 1), null, null);
-    }
 }
