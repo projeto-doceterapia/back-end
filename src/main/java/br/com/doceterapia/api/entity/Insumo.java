@@ -31,9 +31,11 @@ public class Insumo {
     private BigDecimal quantidadeMinima;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private UnidadeMedida unidade;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private StatusAtivo status;
 
     private String marca;
