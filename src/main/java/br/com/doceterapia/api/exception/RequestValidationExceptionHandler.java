@@ -59,6 +59,8 @@ public class RequestValidationExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleUsuarioEmailDuplicado(
             UsuarioEmailAlreadyExistsException ex, HttpServletRequest request) {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(NotificacaoTesteCooldownException.class)
     public ResponseEntity<CooldownErroResponseDTO> handleNotificacaoTesteCooldown(
             NotificacaoTesteCooldownException ex, HttpServletRequest request) {
