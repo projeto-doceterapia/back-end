@@ -3,6 +3,7 @@ package br.com.doceterapia.api.service;
 import org.springframework.stereotype.Service;
 import br.com.doceterapia.api.dto.ClienteRequestDTO;
 import br.com.doceterapia.api.entity.Cliente;
+import br.com.doceterapia.api.enums.StatusAtivo;
 import br.com.doceterapia.api.exception.ClienteIdDontExistsException;
 import br.com.doceterapia.api.exception.TelefoneAlreadyExistsException;
 import br.com.doceterapia.api.mapper.ClienteMapper;
@@ -48,11 +49,11 @@ public class ClienteService {
         return cliente;
     }
 
+    // A client with orders cannot be removed without losing history, so deleting only inactivates.
     public void deletar(Integer id) {
-        if (!repository.existsById(id)) {
-            throw new ClienteIdDontExistsException();
-        }
+        Cliente cliente = repository.findById(id).orElseThrow(ClienteIdDontExistsException::new);
 
-        repository.deleteById(id);
+        cliente.setStatus(StatusAtivo.INATIVO);
+        repository.save(cliente);
     }
 }

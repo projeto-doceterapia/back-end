@@ -65,14 +65,14 @@ public interface ClienteControllerOpenApi {
                     content = @Content(schema = @Schema(implementation = ClienteRequestDTO.class)))
             ClienteRequestDTO request);
 
-    @Operation(summary = "Deletar cliente",
-            description = "Remove um cliente do sistema")
+    @Operation(summary = "Inativar cliente",
+            description = "Marca o cliente como INATIVO sem apagar o registro, para manter o histórico de pedidos. Somente o perfil DONA")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Cliente deletado com sucesso"),
+            @ApiResponse(responseCode = "204", description = "Cliente inativado com sucesso"),
             @ApiResponse(responseCode = "404", description = "Cliente com ID fornecido não encontrado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
         ResponseEntity<Void> deletarCliente(
-            @Parameter(description = "ID do cliente a ser deletado", example = "1")
+            @Parameter(description = "ID do cliente a ser inativado", example = "1")
             Integer id);
 }
