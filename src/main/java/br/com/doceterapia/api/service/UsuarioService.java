@@ -16,6 +16,7 @@ import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
 import br.com.doceterapia.api.dto.UsuarioMapper;
 import br.com.doceterapia.api.dto.UsuarioTokenDto;
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.enums.Perfil;
 import br.com.doceterapia.api.enums.ResultadoUsuarioInicial;
 import br.com.doceterapia.api.exception.UsuarioEmailAlreadyExistsException;
 import br.com.doceterapia.api.exception.UsuarioLogadoNotFoundException;
@@ -74,6 +75,7 @@ public class UsuarioService {
         dados.setNome(isBlank(nome) ? NOME_USUARIO_INICIAL_PADRAO : nome);
         dados.setEmail(email);
         dados.setSenha(senha);
+        dados.setPerfil(Perfil.DONA);
         if (!validator.validate(dados).isEmpty()) {
             return ResultadoUsuarioInicial.VARIAVEIS_INVALIDAS;
         }
