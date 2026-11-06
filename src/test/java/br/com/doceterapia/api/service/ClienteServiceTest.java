@@ -18,6 +18,7 @@ import br.com.doceterapia.api.exception.TelefoneAlreadyExistsException;
 import br.com.doceterapia.api.repository.ClienteRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -184,18 +185,22 @@ class ClienteServiceTest {
     }
 
     @Test
-    @DisplayName("Deve deletar cliente com sucesso")
-    void testDeletarCliente() {
+    @DisplayName("Deletar inativa o cliente sem apagar o registro")
+    void deletarInativaSemApagar() {
         // Arrange
         Integer idCliente = 1;
-        when(clienteRepository.existsById(idCliente)).thenReturn(true);
+        Cliente cliente = new Cliente();
+        cliente.setIdCliente(idCliente);
+        cliente.setStatus(StatusAtivo.ATIVO);
+        when(clienteRepository.findById(idCliente)).thenReturn(Optional.of(cliente));
 
         // Act
         clienteService.deletar(idCliente);
 
         // Assert
-        verify(clienteRepository).existsById(idCliente);
-        verify(clienteRepository).deleteById(idCliente);
+        assertEquals(StatusAtivo.INATIVO, cliente.getStatus());
+        verify(clienteRepository).save(cliente);
+        verify(clienteRepository, never()).deleteById(any());
     }
 
     @Test
@@ -203,14 +208,14 @@ class ClienteServiceTest {
     void testDeletarClienteInexistente() {
         // Arrange
         Integer idCliente = 999;
-        when(clienteRepository.existsById(idCliente)).thenReturn(false);
+        when(clienteRepository.findById(idCliente)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(ClienteIdDontExistsException.class, () -> {
             clienteService.deletar(idCliente);
         });
 
-        verify(clienteRepository).existsById(idCliente);
+        verify(clienteRepository, never()).save(any());
         verify(clienteRepository, never()).deleteById(any());
     }
 }

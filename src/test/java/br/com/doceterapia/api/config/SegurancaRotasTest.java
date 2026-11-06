@@ -3,6 +3,7 @@ package br.com.doceterapia.api.config;
 import br.com.doceterapia.api.controller.UsuarioController;
 import br.com.doceterapia.api.dto.UsuarioDetalhesDto;
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.enums.Perfil;
 import br.com.doceterapia.api.repository.UsuarioRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
@@ -78,6 +79,7 @@ class SegurancaRotasTest {
         usuario.setNome("Dona Exemplo");
         usuario.setEmail(EMAIL);
         usuario.setSenha("hash-ficticio");
+        usuario.setPerfil(Perfil.DONA);
         return usuario;
     }
 
@@ -86,6 +88,7 @@ class SegurancaRotasTest {
         usuario.setNome("Dona Exemplo");
         usuario.setEmail(EMAIL);
         usuario.setSenha(passwordEncoder.encode(SENHA));
+        usuario.setPerfil(Perfil.DONA);
         usuarioRepository.save(usuario);
     }
 

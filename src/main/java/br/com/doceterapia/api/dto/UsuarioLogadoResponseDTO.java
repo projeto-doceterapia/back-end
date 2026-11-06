@@ -1,10 +1,13 @@
 package br.com.doceterapia.api.dto;
 
+import br.com.doceterapia.api.enums.Perfil;
+
 public class UsuarioLogadoResponseDTO {
 
     private Long id;
     private String nome;
     private String email;
+    private Perfil perfil;
 
     public Long getId() {
         return id;
@@ -28,5 +31,13 @@ public class UsuarioLogadoResponseDTO {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Perfil getPerfil() {
+        return perfil;
+    }
+
+    public void setPerfil(Perfil perfil) {
+        this.perfil = perfil;
     }
 }

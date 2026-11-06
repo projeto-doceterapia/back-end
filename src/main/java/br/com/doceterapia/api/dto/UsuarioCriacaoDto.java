@@ -1,7 +1,9 @@
 package br.com.doceterapia.api.dto;
 
 import jakarta.validation.constraints.Email;
+import br.com.doceterapia.api.enums.Perfil;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class UsuarioCriacaoDto {
@@ -17,6 +19,9 @@ public class UsuarioCriacaoDto {
     @NotBlank(message = "Informe a senha.")
     @Size(min = 6, max = 20, message = "A senha deve ter de 6 a 20 caracteres.")
     private String senha;
+
+    @NotNull(message = "Perfil é obrigatório")
+    private Perfil perfil;
 
     public String getNome() {
         return nome;
@@ -40,5 +45,13 @@ public class UsuarioCriacaoDto {
 
     public void setSenha(String senha) {
         this.senha = senha;
+    }
+
+    public Perfil getPerfil() {
+        return perfil;
+    }
+
+    public void setPerfil(Perfil perfil) {
+        this.perfil = perfil;
     }
 }

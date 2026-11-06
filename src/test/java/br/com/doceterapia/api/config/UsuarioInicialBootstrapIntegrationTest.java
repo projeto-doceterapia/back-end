@@ -1,6 +1,7 @@
 package br.com.doceterapia.api.config;
 
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.enums.Perfil;
 import br.com.doceterapia.api.repository.UsuarioRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,7 @@ class UsuarioInicialBootstrapIntegrationTest {
         List<Usuario> usuarios = usuarioRepository.findAll();
         assertEquals(1, usuarios.size());
         assertEquals("Dona", usuarios.get(0).getNome());
+        assertEquals(Perfil.DONA, usuarios.get(0).getPerfil());
         assertTrue(usuarios.get(0).getSenha().startsWith("$2a$"));
 
         mockMvc.perform(post("/usuarios/login")

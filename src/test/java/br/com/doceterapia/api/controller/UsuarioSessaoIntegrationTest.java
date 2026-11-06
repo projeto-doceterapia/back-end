@@ -1,6 +1,7 @@
 package br.com.doceterapia.api.controller;
 
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.enums.Perfil;
 import br.com.doceterapia.api.repository.UsuarioRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
@@ -44,6 +45,7 @@ class UsuarioSessaoIntegrationTest {
         usuario.setNome("Dona Exemplo");
         usuario.setEmail(EMAIL);
         usuario.setSenha(passwordEncoder.encode(SENHA));
+        usuario.setPerfil(Perfil.DONA);
         Long id = usuarioRepository.save(usuario).getId();
 
         Cookie cookie = mockMvc.perform(post("/usuarios/login")
