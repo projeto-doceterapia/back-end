@@ -25,15 +25,17 @@ public interface UsuarioControllerOpenApi {
 
     @Operation(
             summary = "Cadastrar novo usuário",
-            description = "Cria um novo usuário no sistema com os dados fornecidos; requer usuário autenticado. A senha é armazenada com hash BCrypt."
+            description = "Cria um novo usuário no sistema com os dados fornecidos; somente o perfil DONA. O perfil (`DONA` ou `FUNCIONARIA`) é obrigatório. A senha é armazenada com hash BCrypt."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuário cadastrado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos:\n" +
                     "- Nome com menos de 3 ou mais de 50 caracteres\n" +
                     "- E-mail inválido\n" +
-                    "- Senha com menos de 6 ou mais de 20 caracteres"),
+                    "- Senha com menos de 6 ou mais de 20 caracteres\n" +
+                    "- Perfil ausente ou diferente de DONA e FUNCIONARIA"),
             @ApiResponse(responseCode = "401", description = "Sessão ausente ou expirada"),
+            @ApiResponse(responseCode = "403", description = "Esta ação é permitida somente para o perfil DONA"),
             @ApiResponse(responseCode = "409", description = "Já existe um usuário com este e-mail"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
@@ -75,7 +77,7 @@ public interface UsuarioControllerOpenApi {
 
     @Operation(
             summary = "Consultar o usuário logado",
-            description = "Retorna os dados do usuário da sessão atual, identificada pelo cookie `authToken` ou pelo header `Authorization: Bearer`."
+            description = "Retorna os dados do usuário da sessão atual, identificada pelo cookie `authToken` ou pelo header `Authorization: Bearer`. Inclui o `perfil` (`DONA` ou `FUNCIONARIA`), lido do banco a cada requisição."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuário logado",
@@ -88,7 +90,7 @@ public interface UsuarioControllerOpenApi {
 
     @Operation(
             summary = "Listar todos os usuários",
-            description = "Retorna uma lista com todos os usuários cadastrados. Requer autenticação via token JWT."
+            description = "Retorna uma lista com todos os usuários cadastrados, cada um com o seu `perfil`. Somente o perfil DONA."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuários listados com sucesso",
@@ -96,6 +98,7 @@ public interface UsuarioControllerOpenApi {
                             schema = @Schema(implementation = UsuarioListarDto.class))),
             @ApiResponse(responseCode = "204", description = "Nenhum usuário cadastrado"),
             @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+            @ApiResponse(responseCode = "403", description = "Esta ação é permitida somente para o perfil DONA"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     @SecurityRequirement(name = "Bearer")

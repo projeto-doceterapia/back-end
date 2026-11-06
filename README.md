@@ -96,15 +96,40 @@ aplicação, a partir de `ADMIN_EMAIL` e `ADMIN_SENHA`, com o nome de `ADMIN_NOM
 
 | Situação na subida | O que acontece | Log |
 |--------------------|----------------|-----|
-| Tabela `usuario` vazia e variáveis válidas | Cria o usuário, com a senha em BCrypt | `INFO` pedindo para remover `ADMIN_SENHA` |
+| Tabela `usuario` vazia e variáveis válidas | Cria o usuário com o perfil `DONA`, com a senha em BCrypt | `INFO` pedindo para remover `ADMIN_SENHA` |
 | Tabela vazia e `ADMIN_EMAIL` ou `ADMIN_SENHA` em branco | Não cria; ninguém consegue entrar | `WARN` citando as variáveis |
 | Tabela vazia e algum valor inválido | Não cria | `ERROR` citando as regras |
 | Já existem usuários | Ignora as variáveis | `WARN` se `ADMIN_SENHA` estiver preenchida |
 
 A aplicação sobe em todos os casos, e o log nunca traz os valores das variáveis. Depois da
 primeira subida, apague `ADMIN_SENHA` do ambiente. Os próximos usuários são criados por um
-usuário logado. No perfil `local`, o H2 começa vazio a cada subida, então o usuário é criado
-de novo sempre que as variáveis estiverem definidas.
+usuário logado com o perfil `DONA`. No perfil `local`, o H2 começa vazio a cada subida, então o
+usuário é criado de novo sempre que as variáveis estiverem definidas.
+
+## Perfis de acesso
+
+Todo usuário tem um perfil fixo, `DONA` ou `FUNCIONARIA`, gravado em `usuario.perfil` e lido do banco a cada
+requisição: uma mudança de perfil vale na próxima chamada, sem novo login. `GET /usuarios/me` e a lista
+`GET /usuarios` devolvem o campo `perfil`. `POST /usuarios` exige `perfil` (400 se faltar ou for diferente de
+`DONA` e `FUNCIONARIA`) e só a `DONA` cadastra usuários.
+
+A `FUNCIONARIA` recebe 403 (corpo padrão de erro, com a mensagem "Esta ação é permitida somente para o perfil
+DONA.") nas rotas abaixo; todas as demais rotas autenticadas valem para os dois perfis. A regra é por rota, não
+por campo: um custo devolvido por uma rota aberta, como `GET /produtos`, continua visível pela API.
+
+| Grupo | Rotas só da `DONA` |
+|-------|--------------------|
+| Gestão de usuários | `POST /usuarios`, `GET /usuarios` |
+| Preços e ficha técnica | `POST /produtos`, `PUT /produtos/{id}`, `DELETE /produtos/{id}`; `POST`, `PUT /{id}` e `DELETE /{id}` em `/produtos/{produtoId}/insumos`; `/configuracao-precificacao` |
+| Cancelamentos | `POST /cancelamentos/pedido/{pedidoId}`, `PUT` e `DELETE /cancelamentos/{id}`; `PATCH /pedidos/{id}/status` com `statusPedido=CANCELADO` |
+| Confirmar com falta | qualquer requisição com `confirmarComFalta=true` |
+| Dinheiro | `DELETE /pedidos/{id}`, `PUT /pagamentos/{id}`, `DELETE /pagamentos/{id}`, `GET /indicadores/financeiros` |
+| Clientes | `DELETE /clientes/{id}` (inativa o cliente) e `PATCH /clientes/{id}/reativar` |
+| Configurações | `PUT /configuracao-notificacao`, `POST` e `PUT /configuracao-farol` |
+
+Os `GET` de produtos, da ficha técnica, do farol e da configuração de notificações, as categorias de produto,
+o registro de pagamento (`PATCH /pagamentos/{id}/registrar-*`) e as rotas do orquestrador seguem abertos como
+descrito em [Autenticação](#autenticação). Algumas rotas da tabela ainda não existem; a regra já vale para elas.
 
 ## Execução
 
@@ -241,8 +266,8 @@ as demais rotas seguem a seção [Autenticação](#autenticação).
 
 | Recurso | Base | Operações |
 |---------|------|-----------|
-| Usuários / Autenticação | `/usuarios` | `POST` cadastro (exige sessão; e-mail repetido devolve 409), `POST /login`, `POST /logout` (sempre 204, com ou sem sessão), `GET /me` usuário logado, `GET` lista |
-| Clientes | `/clientes` | CRUD |
+| Usuários / Autenticação | `/usuarios` | `POST` cadastro (só `DONA`, exige `perfil`; e-mail repetido devolve 409), `POST /login`, `POST /logout` (sempre 204, com ou sem sessão), `GET /me` usuário logado com `perfil`, `GET` lista com `perfil` (só `DONA`) |
+| Clientes | `/clientes` | CRUD; `DELETE` só inativa (`status` vira `INATIVO`) |
 | Categorias de produto | `/categorias-produto` | CRUD |
 | Produtos | `/produtos` | CRUD |
 | Insumos de produto | `/produtos/{produtoId}/insumos` | CRUD |
