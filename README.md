@@ -40,6 +40,7 @@ No perfil `prod` os nomes abaixo são obrigatórios e vêm do ambiente:
 | `DB_PASSWORD` | Senha do banco |
 | `JWT_SECRET` | Chave Base64 (mínimo 32 bytes) para assinar os tokens JWT |
 | `ORQUESTRADOR_TOKEN` | Credencial de serviço do orquestrador do WhatsApp (ver [Autenticação](#autenticação)). Não pode estar em branco; a aplicação não inicia sem a variável |
+| `CORS_ALLOWED_ORIGINS` | Origens autorizadas a chamar a API de outro domínio, separadas por vírgula. A variável precisa existir, mas pode ser vazia (nenhuma origem). No perfil `local` o padrão é `http://localhost:5173,http://localhost:3000` |
 | `SWAGGER_ENABLED` | `true` expõe o Swagger UI e `/v3/api-docs`; `false` os desliga (respondem 404). Sem valor padrão no perfil `prod` |
 
 Opcionais:
