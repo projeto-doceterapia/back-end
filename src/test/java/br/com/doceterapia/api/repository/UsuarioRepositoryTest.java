@@ -1,6 +1,7 @@
 package br.com.doceterapia.api.repository;
 
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.enums.Perfil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ class UsuarioRepositoryTest {
         usuario.setNome("Dona Exemplo");
         usuario.setEmail(email);
         usuario.setSenha("hash-ficticio");
+        usuario.setPerfil(Perfil.DONA);
         return usuario;
     }
 

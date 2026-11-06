@@ -20,6 +20,7 @@ import br.com.doceterapia.api.config.GerenciadorTokenJwt;
 import br.com.doceterapia.api.dto.UsuarioLogadoResponseDTO;
 import br.com.doceterapia.api.dto.UsuarioTokenDto;
 import br.com.doceterapia.api.entity.Usuario;
+import br.com.doceterapia.api.enums.Perfil;
 import br.com.doceterapia.api.enums.ResultadoUsuarioInicial;
 import br.com.doceterapia.api.exception.UsuarioEmailAlreadyExistsException;
 import br.com.doceterapia.api.exception.UsuarioLogadoNotFoundException;
@@ -63,6 +64,7 @@ class UsuarioServiceTest {
         usuario.setNome("João Silva");
         usuario.setEmail("joao@example.com");
         usuario.setSenha(senhaOriginal);
+        usuario.setPerfil(Perfil.FUNCIONARIA);
     }
 
     @Test
@@ -79,6 +81,23 @@ class UsuarioServiceTest {
         verify(passwordEncoder).encode(senhaOriginal);
         verify(usuarioRepository).save(any(Usuario.class));
         assertEquals(senhaCriptografada, usuario.getSenha());
+    }
+
+    @Test
+    @DisplayName("Cria usuário com o perfil escolhido e a senha em hash")
+    void criarUsuarioGravaOPerfilEscolhido() {
+        // Arrange
+        usuario.setPerfil(Perfil.FUNCIONARIA);
+        when(passwordEncoder.encode(senhaOriginal)).thenReturn(senhaCriptografada);
+
+        // Act
+        usuarioService.criar(usuario);
+
+        // Assert
+        ArgumentCaptor<Usuario> gravado = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).save(gravado.capture());
+        assertEquals(Perfil.FUNCIONARIA, gravado.getValue().getPerfil());
+        assertEquals(senhaCriptografada, gravado.getValue().getSenha());
     }
 
     @Test
@@ -151,6 +170,7 @@ class UsuarioServiceTest {
         assertEquals(1L, resultado.getId());
         assertEquals("João Silva", resultado.getNome());
         assertEquals("joao@example.com", resultado.getEmail());
+        assertEquals(Perfil.FUNCIONARIA, resultado.getPerfil());
         assertTrue(Arrays.stream(UsuarioLogadoResponseDTO.class.getDeclaredFields())
                 .noneMatch(campo -> campo.getName().equals("senha")));
     }
@@ -190,6 +210,7 @@ class UsuarioServiceTest {
         assertEquals("Dona Exemplo", gravado.getValue().getNome());
         assertEquals("dona@exemplo.com", gravado.getValue().getEmail());
         assertEquals(senhaCriptografada, gravado.getValue().getSenha());
+        assertEquals(Perfil.DONA, gravado.getValue().getPerfil());
     }
 
     @Test
@@ -267,6 +288,7 @@ class UsuarioServiceTest {
         usuario2.setId(2L);
         usuario2.setNome("Maria Silva");
         usuario2.setEmail("maria@example.com");
+        usuario2.setPerfil(Perfil.DONA);
 
         when(usuarioRepository.findAll()).thenReturn(List.of(usuario, usuario2));
 
@@ -276,6 +298,8 @@ class UsuarioServiceTest {
         // Assert
         assertNotNull(resultado);
         assertEquals(2, resultado.size());
+        assertEquals(Perfil.FUNCIONARIA, resultado.get(0).getPerfil());
+        assertEquals(Perfil.DONA, resultado.get(1).getPerfil());
         verify(usuarioRepository).findAll();
     }
 
