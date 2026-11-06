@@ -270,4 +270,5 @@ class CriacaoNotificacaoServiceTest {
         assertSame(existente, resultado);
         verify(eventPublisher, never()).publishEvent(any(Object.class));
     }
+
 }

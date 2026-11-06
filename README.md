@@ -321,5 +321,7 @@ intervalo mínimo (`assistente.notificacao.teste-cooldown-s`, padrão 300 s) res
 - **Linha única de configuração:** o serviço de notificação sempre usa a linha mais antiga e
   serializa a primeira criação, o que basta para uma instância. A configuração do farol da
   agenda assume uma única linha, sem restrição de unicidade que a garanta.
+- **Autenticação das novas rotas:** as rotas de estoque, catálogo e notificações seguem o
+  mesmo modelo das demais e não exigem autenticação própria.
 - **Instância única:** o registro de conexões SSE e os jobs agendados assumem uma única
   instância da aplicação; não há coordenação entre réplicas.
