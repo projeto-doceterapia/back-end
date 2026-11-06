@@ -70,6 +70,7 @@ class UsuarioControllerTest {
 
     private static final String EMAIL = "dona@exemplo.com";
     private static final String MENSAGEM_401 = "Sessão ausente ou expirada. Entre novamente.";
+    private static final String MENSAGEM_403 = "Esta ação é permitida somente para o perfil DONA.";
     private static final String CADASTRO_VALIDO = """
             { "nome": "Funcionária Exemplo", "email": "funcionaria@exemplo.com", "senha": "SenhaFicticia1",
               "perfil": "FUNCIONARIA" }
@@ -174,6 +175,23 @@ class UsuarioControllerTest {
     }
 
     @Test
+    @DisplayName("FUNCIONARIA não cria usuário: 403 no formato padrão e nada é gravado")
+    void funcionariaNaoCriaUsuario() throws Exception {
+        mockMvc.perform(post("/usuarios")
+                        .with(sessaoDa(Perfil.FUNCIONARIA))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CADASTRO_VALIDO))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.error").value("Forbidden"))
+                .andExpect(jsonPath("$.message").value(MENSAGEM_403))
+                .andExpect(jsonPath("$.path").value("/usuarios"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(usuarioService, never()).criar(any(Usuario.class));
+    }
+
+    @Test
     @DisplayName("POST /usuarios com e-mail duplicado devolve 409 no formato compartilhado")
     void criarEmailDuplicadoRetorna409() throws Exception {
         doThrow(new UsuarioEmailAlreadyExistsException()).when(usuarioService).criar(any(Usuario.class));
@@ -236,6 +254,16 @@ class UsuarioControllerTest {
                 .andExpect(jsonPath("$[0].perfil").value("DONA"))
                 .andExpect(jsonPath("$[1].perfil").value("FUNCIONARIA"))
                 .andExpect(jsonPath("$[1].senha").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("GET /usuarios da FUNCIONARIA devolve 403 sem consultar a lista")
+    void funcionariaNaoListaUsuarios() throws Exception {
+        mockMvc.perform(get("/usuarios").with(sessaoDa(Perfil.FUNCIONARIA)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(MENSAGEM_403));
+
+        verify(usuarioService, never()).listarTodos();
     }
 
     @Test
