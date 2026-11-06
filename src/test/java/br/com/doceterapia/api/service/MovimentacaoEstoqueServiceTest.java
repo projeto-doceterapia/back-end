@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -32,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -239,5 +242,71 @@ class MovimentacaoEstoqueServiceTest {
         assertEquals(TipoMovimentacao.AJUSTE, movimentacao.getTipo());
         assertEquals(0, BigDecimal.valueOf(-3).compareTo(movimentacao.getQuantidade()));
         assertEquals(0, BigDecimal.valueOf(7).compareTo(insumoKg.getQuantidadeAtual()));
+    }
+
+    @Test
+    @DisplayName("Ajuste sem diferença avalia o alerta com o mínimo novo e não grava movimentação")
+    void ajusteSemDiferencaAvaliaComMinimoNovo() {
+        insumoKg.setQuantidadeAtual(BigDecimal.valueOf(3));
+        insumoKg.setQuantidadeMinima(BigDecimal.valueOf(2));
+
+        Optional<MovimentacaoEstoque> movimentacao =
+                service.registrarAjusteParaAlvo(insumoKg, BigDecimal.valueOf(3), BigDecimal.valueOf(4));
+
+        assertTrue(movimentacao.isEmpty());
+        assertEquals(0, BigDecimal.valueOf(4).compareTo(insumoKg.getQuantidadeMinima()));
+        verify(repository, never()).saveAndFlush(any());
+        verify(alertaEstoqueBaixoService).avaliar(
+                insumoKg, BigDecimal.valueOf(3), BigDecimal.valueOf(2), BigDecimal.valueOf(3));
+    }
+
+    @Test
+    @DisplayName("Ajuste com diferença e mínimo novo avalia o alerta uma única vez")
+    void ajusteComMinimoNovoAvaliaUmaVez() {
+        insumoKg.setQuantidadeAtual(BigDecimal.valueOf(5));
+        insumoKg.setQuantidadeMinima(BigDecimal.valueOf(2));
+
+        Optional<MovimentacaoEstoque> movimentacao =
+                service.registrarAjusteParaAlvo(insumoKg, BigDecimal.valueOf(3), BigDecimal.valueOf(4));
+
+        assertTrue(movimentacao.isPresent());
+        assertEquals(TipoMovimentacao.AJUSTE, movimentacao.get().getTipo());
+        assertEquals(0, BigDecimal.valueOf(3).compareTo(insumoKg.getQuantidadeAtual()));
+        assertEquals(0, BigDecimal.valueOf(4).compareTo(insumoKg.getQuantidadeMinima()));
+        verify(alertaEstoqueBaixoService, times(1)).avaliar(
+                insumoKg, BigDecimal.valueOf(5), BigDecimal.valueOf(2), BigDecimal.valueOf(3));
+    }
+
+    @Test
+    @DisplayName("Mínimo novo é aplicado depois do refresh, que relê o mínimo sob o lock")
+    void minimoNovoAplicadoDepoisDoRefresh() {
+        insumoKg.setQuantidadeAtual(BigDecimal.valueOf(3));
+        insumoKg.setQuantidadeMinima(BigDecimal.valueOf(9));
+        // A concurrent edit committed minimum 2: the refresh under the lock reads it.
+        doAnswer(invocation -> {
+            insumoKg.setQuantidadeMinima(BigDecimal.valueOf(2));
+            return null;
+        }).when(entityManager).refresh(insumoKg);
+
+        service.registrarAjusteParaAlvo(insumoKg, BigDecimal.valueOf(3), BigDecimal.valueOf(4));
+
+        assertEquals(0, BigDecimal.valueOf(4).compareTo(insumoKg.getQuantidadeMinima()));
+        InOrder ordem = inOrder(entityManager, alertaEstoqueBaixoService);
+        ordem.verify(entityManager).lock(insumoKg, LockModeType.PESSIMISTIC_WRITE);
+        ordem.verify(entityManager).refresh(insumoKg);
+        ordem.verify(alertaEstoqueBaixoService).avaliar(
+                insumoKg, BigDecimal.valueOf(3), BigDecimal.valueOf(2), BigDecimal.valueOf(3));
+    }
+
+    @Test
+    @DisplayName("Ajuste direto mantém o mínimo do insumo como mínimo anterior")
+    void ajusteDiretoUsaMinimoInalterado() {
+        insumoKg.setQuantidadeAtual(BigDecimal.valueOf(3));
+        insumoKg.setQuantidadeMinima(BigDecimal.valueOf(2));
+
+        service.registrarAjuste(insumoKg, BigDecimal.valueOf(-2));
+
+        verify(alertaEstoqueBaixoService).avaliar(
+                insumoKg, BigDecimal.valueOf(3), BigDecimal.valueOf(2), BigDecimal.valueOf(1));
     }
 }

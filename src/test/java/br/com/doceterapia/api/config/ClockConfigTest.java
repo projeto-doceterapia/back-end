@@ -3,6 +3,7 @@ package br.com.doceterapia.api.config;
 import br.com.doceterapia.api.entity.ConfiguracaoNotificacao;
 import br.com.doceterapia.api.entity.Notificacao;
 import br.com.doceterapia.api.enums.TipoNotificacao;
+import br.com.doceterapia.api.mapper.NotificacaoMapper;
 import br.com.doceterapia.api.repository.NotificacaoRepository;
 import br.com.doceterapia.api.service.ConfiguracaoNotificacaoService;
 import br.com.doceterapia.api.service.notificacao.ComandoNotificacao;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -37,6 +39,12 @@ class ClockConfigTest {
 
     @Mock
     private ConfiguracaoNotificacaoService configuracaoService;
+
+    @Mock
+    private NotificacaoMapper mapper;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
@@ -83,7 +91,7 @@ class ClockConfigTest {
     private LocalDateTime janelaResumoNoFuso(Instant instante, String fuso) {
         Clock clock = Clock.fixed(instante, new ClockConfig(fuso).clock().getZone());
         CriacaoNotificacaoService servico = new CriacaoNotificacaoService(
-                repository, configuracaoService, clock, objectMapper, 10, 2);
+                repository, configuracaoService, clock, objectMapper, 10, 2, mapper, eventPublisher);
 
         when(configuracaoService.obterOuCriar()).thenReturn(config);
         when(repository.findByChaveUnicidade(anyString())).thenReturn(Optional.empty());

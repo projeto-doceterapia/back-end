@@ -14,9 +14,11 @@ import java.time.LocalDate;
  * Decides whether a balance change must raise an ESTOQUE_BAIXO alert. Called by
  * {@code MovimentacaoEstoqueService} inside the same transaction that mutates
  * the balance, so the alert commits together with the movement. The alert fires
- * only on a downward crossing of the minimum (above to at-or-below), never while
- * the balance was already at or below it; the daily dedup key then keeps a single
- * alert per supply per day.
+ * only when the supply goes from not low to low, comparing the previous balance
+ * against the previous minimum and the new balance against the new minimum, so
+ * raising the minimum above the balance also fires it. It never fires while the
+ * supply was already low; the daily dedup key then keeps a single alert per supply
+ * per day.
  */
 @Service
 public class AlertaEstoqueBaixoService {
@@ -33,14 +35,12 @@ public class AlertaEstoqueBaixoService {
         this.clock = clock;
     }
 
-    public void avaliar(Insumo insumo, BigDecimal saldoAnterior, BigDecimal saldoNovo) {
+    public void avaliar(Insumo insumo, BigDecimal saldoAnterior,
+                        BigDecimal minimoAnterior, BigDecimal saldoNovo) {
         BigDecimal minimo = insumo.getQuantidadeMinima();
-        if (minimo == null) {
-            return;
-        }
-        boolean cruzouParaBaixo = saldoAnterior.compareTo(minimo) > 0
-                && saldoNovo.compareTo(minimo) <= 0;
-        if (!cruzouParaBaixo) {
+        boolean estavaBaixo = minimoAnterior != null && saldoAnterior.compareTo(minimoAnterior) <= 0;
+        boolean ficouBaixo = minimo != null && saldoNovo.compareTo(minimo) <= 0;
+        if (estavaBaixo || !ficouBaixo) {
             return;
         }
 

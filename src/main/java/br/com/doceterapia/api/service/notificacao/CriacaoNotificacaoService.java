@@ -3,10 +3,14 @@ package br.com.doceterapia.api.service.notificacao;
 import br.com.doceterapia.api.entity.ConfiguracaoNotificacao;
 import br.com.doceterapia.api.entity.Notificacao;
 import br.com.doceterapia.api.enums.StatusEnvioNotificacao;
+import br.com.doceterapia.api.event.NotificacaoCriadaEvent;
+import br.com.doceterapia.api.mapper.NotificacaoMapper;
 import br.com.doceterapia.api.repository.NotificacaoRepository;
 import br.com.doceterapia.api.service.ConfiguracaoNotificacaoService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Clock;
@@ -34,6 +38,8 @@ public class CriacaoNotificacaoService {
     private final ObjectMapper objectMapper;
     private final int jitterResumoMin;
     private final int janelaImediataMin;
+    private final NotificacaoMapper mapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     public CriacaoNotificacaoService(
             NotificacaoRepository repository,
@@ -41,20 +47,28 @@ public class CriacaoNotificacaoService {
             Clock clock,
             ObjectMapper objectMapper,
             @Value("${assistente.notificacao.jitter-resumo-min:10}") int jitterResumoMin,
-            @Value("${assistente.notificacao.janela-imediata-min:2}") int janelaImediataMin) {
+            @Value("${assistente.notificacao.janela-imediata-min:2}") int janelaImediataMin,
+            NotificacaoMapper mapper,
+            ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.configuracaoService = configuracaoService;
         this.clock = clock;
         this.objectMapper = objectMapper;
         this.jitterResumoMin = jitterResumoMin;
         this.janelaImediataMin = janelaImediataMin;
+        this.mapper = mapper;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
      * Creates the notification unless one with the same business key already
      * exists. Returns the created notification, or the existing one when the
-     * key is already present, so reruns and restarts never duplicate.
+     * key is already present, so reruns and restarts never duplicate. Only a real
+     * creation publishes the event behind the live stream. The method is
+     * transactional because the AFTER_COMMIT listener silently drops an event
+     * published outside a transaction.
      */
+    @Transactional
     public Notificacao criar(ComandoNotificacao comando) {
         Optional<Notificacao> existente =
                 repository.findByChaveUnicidade(comando.chaveUnicidade());
@@ -87,7 +101,9 @@ public class CriacaoNotificacaoService {
         entity.setPedido(comando.pedido());
         entity.setInsumo(comando.insumo());
 
-        return repository.save(entity);
+        Notificacao salva = repository.save(entity);
+        eventPublisher.publishEvent(new NotificacaoCriadaEvent(mapper.toResponseDTO(salva)));
+        return salva;
     }
 
     private LocalDateTime baseDaJanela(ComandoNotificacao comando) {
