@@ -68,6 +68,10 @@ A API sobe em `http://localhost:8080`. Swagger UI em
 ./mvnw.cmd clean verify  # gate completo + cobertura JaCoCo em target/site/jacoco/
 ```
 
+O `clean verify` falha se a cobertura do projeto ficar abaixo do piso: 65% de linhas e
+65% de branches. A classe `ApiDoceterapiaApplication` e o pacote `config` ficam fora da
+conta. O piso está na execução `check` do `jacoco-maven-plugin`, no `pom.xml`.
+
 ## Endpoints
 
 Rotas sem versionamento, autenticadas por cookie de sessão (exceto login/cadastro).

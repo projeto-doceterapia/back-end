@@ -31,3 +31,23 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# WhatsApp (Baileys) session data
+session/
+auth_info*/
+
+# Database dumps
+dumps/
+*.dump
+dump-*.sql
+*.sql.gz
+*.sql.zip
