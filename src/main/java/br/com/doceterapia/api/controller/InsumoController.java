@@ -15,7 +15,6 @@ import br.com.doceterapia.api.swagger.InsumoControllerOpenApi;
 
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/insumos")
 public class InsumoController implements InsumoControllerOpenApi {

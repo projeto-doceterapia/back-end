@@ -13,7 +13,6 @@ import br.com.doceterapia.api.swagger.ProducaoControllerOpenApi;
 
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/producoes")
 public class ProducaoController implements ProducaoControllerOpenApi {

@@ -9,7 +9,6 @@ import br.com.doceterapia.api.dto.ConfiguracaoFarolResponseDTO;
 import br.com.doceterapia.api.service.ConfiguracaoFarolAgendaService;
 import br.com.doceterapia.api.swagger.ConfiguracaoFarolAgendaControllerOpenApi;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/configuracao-farol")
 public class ConfiguracaoFarolAgendaController implements ConfiguracaoFarolAgendaControllerOpenApi {

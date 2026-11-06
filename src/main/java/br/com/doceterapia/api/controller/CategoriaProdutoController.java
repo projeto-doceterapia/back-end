@@ -12,7 +12,6 @@ import br.com.doceterapia.api.swagger.CategoriaProdutoControllerOpenApi;
 
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/categorias-produto")
 public class CategoriaProdutoController implements CategoriaProdutoControllerOpenApi {

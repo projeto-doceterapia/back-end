@@ -12,7 +12,6 @@ import br.com.doceterapia.api.swagger.ClienteControllerOpenApi;
 
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/clientes")
 public class ClienteController implements ClienteControllerOpenApi {

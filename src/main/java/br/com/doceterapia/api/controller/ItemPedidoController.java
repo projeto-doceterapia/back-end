@@ -12,7 +12,6 @@ import br.com.doceterapia.api.swagger.ItemPedidoControllerOpenApi;
 
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/itens-pedido")
 public class ItemPedidoController implements ItemPedidoControllerOpenApi {
