@@ -45,6 +45,12 @@ public class ConfiguracaoNotificacaoResponseDTO {
     @Schema(description = "Alerta de dia lotado ativo", example = "true")
     private Boolean diaLotadoAtivo;
 
+    @Schema(description = "Avisos automáticos no WhatsApp ativos. Desligado, os avisos ficam só no sino", example = "true")
+    private Boolean avisosAutomaticosAtivo;
+
+    @Schema(description = "Assistente ativo. Desligado, pausa conversa, leitura de notas e avisos", example = "true")
+    private Boolean assistenteAtivo;
+
     public LocalTime getInicioExpediente() {
         return inicioExpediente;
     }
@@ -123,5 +129,21 @@ public class ConfiguracaoNotificacaoResponseDTO {
 
     public void setDiaLotadoAtivo(Boolean diaLotadoAtivo) {
         this.diaLotadoAtivo = diaLotadoAtivo;
+    }
+
+    public Boolean getAvisosAutomaticosAtivo() {
+        return avisosAutomaticosAtivo;
+    }
+
+    public void setAvisosAutomaticosAtivo(Boolean avisosAutomaticosAtivo) {
+        this.avisosAutomaticosAtivo = avisosAutomaticosAtivo;
+    }
+
+    public Boolean getAssistenteAtivo() {
+        return assistenteAtivo;
+    }
+
+    public void setAssistenteAtivo(Boolean assistenteAtivo) {
+        this.assistenteAtivo = assistenteAtivo;
     }
 }

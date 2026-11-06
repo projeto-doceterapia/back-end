@@ -64,6 +64,7 @@ public class ResumoDiarioScheduler {
 
     private void criarInicioDia(LocalDate hoje, LocalTime horario) {
         ParametrosResumoInicioDia parametros = new ParametrosResumoInicioDia(
+                hoje,
                 queries.sinaisParaConferir(),
                 queries.pagamentosFinaisParaConferir(),
                 queries.entregasHoje(hoje),
@@ -75,6 +76,7 @@ public class ResumoDiarioScheduler {
         LocalDate amanha = hoje.plusDays(1);
         LocalDate ate = hoje.plusDays(diasAntecedencia);
         ParametrosResumoFimDia parametros = new ParametrosResumoFimDia(
+                hoje,
                 queries.proximosDias(amanha, ate),
                 queries.insumosParaComprar());
         criacaoService.criar(builder.fimDia(hoje, horario, parametros));

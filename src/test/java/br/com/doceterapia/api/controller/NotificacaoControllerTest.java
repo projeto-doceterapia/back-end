@@ -4,9 +4,11 @@ import br.com.doceterapia.api.dto.NotificacaoAgendaResponseDTO;
 import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
 import br.com.doceterapia.api.enums.StatusEnvioNotificacao;
 import br.com.doceterapia.api.enums.TipoNotificacao;
+import br.com.doceterapia.api.exception.NotificacaoTesteCooldownException;
 import br.com.doceterapia.api.exception.RequestValidationExceptionHandler;
 import br.com.doceterapia.api.service.NotificacaoEmitterRegistry;
 import br.com.doceterapia.api.service.NotificacaoService;
+import br.com.doceterapia.api.service.notificacao.NotificacaoTesteService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +53,40 @@ class NotificacaoControllerTest {
 
     @MockitoBean
     private NotificacaoEmitterRegistry emitterRegistry;
+
+    @MockitoBean
+    private NotificacaoTesteService testeService;
+
+    @Test
+    @DisplayName("POST /teste fora do intervalo mínimo retorna 201")
+    void deveEnviarNotificacaoTeste() throws Exception {
+        NotificacaoResponseDTO response = new NotificacaoResponseDTO();
+        response.setIdNotificacao(57);
+        response.setTipo(TipoNotificacao.ALERTA_OPERACIONAL);
+        response.setTemplateKey("alerta_operacional");
+        response.setStatusEnvio(StatusEnvioNotificacao.PENDENTE);
+        when(testeService.enviar()).thenReturn(response);
+
+        mockMvc.perform(post("/notificacoes/teste"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.idNotificacao").value(57))
+                .andExpect(jsonPath("$.templateKey").value("alerta_operacional"))
+                .andExpect(jsonPath("$.statusEnvio").value("PENDENTE"));
+    }
+
+    @Test
+    @DisplayName("POST /teste dentro do intervalo mínimo retorna 429 com segundosRestantes")
+    void deveRecusarNotificacaoTesteNoIntervalo() throws Exception {
+        when(testeService.enviar()).thenThrow(new NotificacaoTesteCooldownException(270));
+
+        mockMvc.perform(post("/notificacoes/teste"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.status").value(429))
+                .andExpect(jsonPath("$.error").value("Too Many Requests"))
+                .andExpect(jsonPath("$.message").value("Aguarde para enviar outra notificação de teste."))
+                .andExpect(jsonPath("$.path").value("/notificacoes/teste"))
+                .andExpect(jsonPath("$.segundosRestantes").value(270));
+    }
 
     @Test
     @DisplayName("Deve cadastrar notificação com tipo permitido e retornar 201")
