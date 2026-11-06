@@ -73,14 +73,17 @@ public class SecurityConfiguracao {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(CsrfConfigurer<HttpSecurity>::disable)
-                .authorizeHttpRequests(authorize -> authorize
-                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/usuarios/login", "/usuarios/logout").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                        .requestMatchers(matchersDoOrquestrador()).authenticated()
-                        .anyRequest().access(usuarioLogado())
-                )
+                .authorizeHttpRequests(authorize -> {
+                    authorize
+                            .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
+                            .requestMatchers(HttpMethod.POST, "/usuarios/login", "/usuarios/logout").permitAll()
+                            .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                            .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll();
+                    AutorizacaoPorPerfil.registrar(authorize);
+                    authorize
+                            .requestMatchers(matchersDoOrquestrador()).authenticated()
+                            .anyRequest().access(usuarioLogado());
+                })
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(autenticacaoJwtEntryPoint)
                         .accessDeniedHandler(acessoNegadoHandler))
