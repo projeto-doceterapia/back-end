@@ -1,7 +1,10 @@
 package br.com.doceterapia.api.config;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,6 +24,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -40,26 +45,6 @@ public class SecurityConfiguracao {
     private final AcessoNegadoHandler acessoNegadoHandler;
     private final SegurancaProperties segurancaProperties;
 
-    private static final String[] URLS_PERMITIDAS = {
-            "/swagger-ui/**",
-            "/swagger-ui.html",
-            "/swagger-resources",
-            "/swagger-resources/**",
-            "/configuration/ui",
-            "/configuration/security",
-            "/api/public/**",
-            "/api/public/authenticate",
-            "/webjars/**",
-            "/v3/api-docs/**",
-            "/actuator/*",
-            "/usuarios/login",
-            "/usuarios/login/**",
-            "/usuarios/logout",
-            "/h2-console/**",
-            "/h2-console/*/**",
-            "/error/**"
-    };
-
     public SecurityConfiguracao(AutenticacaoService autenticacaoService,
                                 AutenticacaoEntryPoint autenticacaoJwtEntryPoint,
                                 AcessoNegadoHandler acessoNegadoHandler,
@@ -70,16 +55,30 @@ public class SecurityConfiguracao {
         this.segurancaProperties = segurancaProperties;
     }
 
+    // The console renders inside frames of its own origin, so frame options are relaxed for this path only.
+    @Bean
+    @Profile("local")
+    @Order(1)
+    public SecurityFilterChain h2ConsoleFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/h2-console/**")
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .csrf(CsrfConfigurer<HttpSecurity>::disable)
+                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
+        return http.build();
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .headers(headers -> headers
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                 .cors(Customizer.withDefaults())
                 .csrf(CsrfConfigurer<HttpSecurity>::disable)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(URLS_PERMITIDAS).permitAll()
-                        .requestMatchers("/clientes/**", "/pedidos/**", "/pagamentos/**", "/cancelamentos/**", "/categorias-produto/**", "/produtos/**", "/categorias-insumo/**", "/insumos/**", "/itens-pedido/**", "/producoes/**", "/notificacoes/**", "/configuracao-farol/**", "/configuracao-notificacao/**", "/estoque/**", "/notas-fiscais/**").permitAll()
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/usuarios/login", "/usuarios/logout").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(matchersDoOrquestrador()).authenticated()
                         .anyRequest().access(usuarioLogado())
                 )
                 .exceptionHandling(handling -> handling
@@ -94,6 +93,14 @@ public class SecurityConfiguracao {
         return http.build();
     }
 
+    private static RequestMatcher[] matchersDoOrquestrador() {
+        PathPatternRequestMatcher.Builder construtor = PathPatternRequestMatcher.withDefaults();
+        return RotasOrquestrador.ROTAS.stream()
+                .map(rota -> construtor.matcher(rota.metodo(), rota.caminho()))
+                .toArray(RequestMatcher[]::new);
+    }
+
+    // The service principal reaches only the orchestrator routes: everywhere else it is denied.
     private static AuthorizationManager<RequestAuthorizationContext> usuarioLogado() {
         return AuthorizationManagers.allOf(
                 AuthenticatedAuthorizationManager.authenticated(),
@@ -128,10 +135,7 @@ public class SecurityConfiguracao {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuracao = new CorsConfiguration();
 
-        configuracao.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:3000"
-        ));
+        configuracao.setAllowedOrigins(segurancaProperties.getCors().getOrigensPermitidas());
         configuracao.setAllowCredentials(true);
         configuracao.setAllowedMethods(Arrays.asList(
                 HttpMethod.GET.name(),
@@ -140,8 +144,7 @@ public class SecurityConfiguracao {
                 HttpMethod.PATCH.name(),
                 HttpMethod.DELETE.name(),
                 HttpMethod.OPTIONS.name(),
-                HttpMethod.HEAD.name(),
-                HttpMethod.TRACE.name()
+                HttpMethod.HEAD.name()
         ));
         configuracao.setAllowedHeaders(List.of("*"));
         configuracao.setExposedHeaders(List.of(HttpHeaders.CONTENT_DISPOSITION));

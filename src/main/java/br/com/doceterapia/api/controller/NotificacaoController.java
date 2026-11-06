@@ -19,7 +19,6 @@ import br.com.doceterapia.api.swagger.NotificacaoControllerOpenApi;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/notificacoes")
 public class NotificacaoController implements NotificacaoControllerOpenApi {

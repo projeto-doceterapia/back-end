@@ -12,7 +12,6 @@ import br.com.doceterapia.api.swagger.CategoriaInsumoControllerOpenApi;
 
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/categorias-insumo")
 public class CategoriaInsumoController implements CategoriaInsumoControllerOpenApi {
