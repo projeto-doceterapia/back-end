@@ -39,6 +39,8 @@ No perfil `prod` os nomes abaixo são obrigatórios e vêm do ambiente:
 | `DB_USERNAME` | Usuário do banco |
 | `DB_PASSWORD` | Senha do banco |
 | `JWT_SECRET` | Chave Base64 (mínimo 32 bytes) para assinar os tokens JWT |
+| `ORQUESTRADOR_TOKEN` | Credencial de serviço do orquestrador do WhatsApp (ver [Autenticação](#autenticação)). Não pode estar em branco; a aplicação não inicia sem a variável |
+| `SWAGGER_ENABLED` | `true` expõe o Swagger UI e `/v3/api-docs`; `false` os desliga (respondem 404). Sem valor padrão no perfil `prod` |
 
 Opcionais:
 
@@ -52,6 +54,39 @@ Opcionais:
 | `ADMIN_SENHA` | vazio | Senha do primeiro usuário, de 6 a 20 caracteres. Necessária só na primeira subida; apague depois |
 | `COOKIE_SECURE` | `false` | Atributo `secure` do cookie de sessão, no login e no logout. Use `true` só com HTTPS na frente da aplicação |
 | `DEMO_DATA` | `false` | Com `true`, carrega a massa fictícia de demonstração depois do schema (ver [Massa fictícia](#massa-fictícia)). Só tem efeito com o Flyway ligado, no perfil `prod` |
+
+## Autenticação
+
+Todas as rotas exigem autenticação, exceto `POST /usuarios/login`, `POST /usuarios/logout`,
+`GET /actuator/health`, o Swagger (`/swagger-ui/**`, `/v3/api-docs/**`, quando ligado) e a página de erro.
+Sem credencial, a resposta é 401 com o corpo padrão de erro (`timestamp`, `status`, `error`, `message`, `path`).
+
+Há duas formas de se identificar:
+
+- **Usuário:** cookie `authToken` (definido no login) ou header `Authorization: Bearer <jwt>`. Vale em todas as rotas.
+- **Orquestrador do WhatsApp:** header `X-Orquestrador-Token` com o valor de `ORQUESTRADOR_TOKEN`. O valor é
+  comparado em tempo constante. Vale somente nestas rotas; em qualquer outra a resposta é 403:
+
+| Método | Rota |
+|--------|------|
+| `GET` | `/insumos/catalogo` |
+| `POST` | `/insumos/obter-ou-criar` |
+| `GET` | `/notas-fiscais/{chave}/status` |
+| `POST` | `/estoque/movimentos` |
+| `GET` | `/notificacoes/agenda` |
+| `POST` | `/notificacoes/{id}/confirmacao-envio` |
+| `GET` | `/categorias-insumo` |
+| `POST` | `/notificacoes` |
+| `GET` | `/configuracao-notificacao` |
+
+Exemplo (valor fictício):
+
+```bash
+curl -H "X-Orquestrador-Token: <valor de ORQUESTRADOR_TOKEN>" http://localhost:8080/categorias-insumo
+```
+
+Token errado resulta em 401. No perfil `local`, `ORQUESTRADOR_TOKEN` é opcional; em branco, a credencial de
+serviço fica desligada. Uma nova chamada do orquestrador à API precisa entrar na lista de rotas (`RotasOrquestrador`).
 
 ## Primeiro usuário
 
@@ -200,7 +235,8 @@ O arquivo desliga e religa `FOREIGN_KEY_CHECKS` e `unique_checks` e usa lotes de
 ## Endpoints
 
 Rotas sem versionamento. A sessão vem do cookie `authToken` ou do header
-`Authorization: Bearer`. `POST /usuarios/login` e `POST /usuarios/logout` são públicas.
+`Authorization: Bearer`. `POST /usuarios/login` e `POST /usuarios/logout` são públicas;
+as demais rotas seguem a seção [Autenticação](#autenticação).
 
 | Recurso | Base | Operações |
 |---------|------|-----------|
@@ -252,7 +288,5 @@ A configuração fica em `/configuracao-notificacao` (linha única):
   unidade podem criar insumos duplicados. A correção definitiva exige mudança de schema.
 - **Linha única de configuração:** as configurações de notificação e do farol da agenda
   assumem uma única linha, sem restrição de unicidade que a garanta.
-- **Autenticação das novas rotas:** as rotas de estoque, catálogo e notificações seguem o
-  mesmo modelo das demais e não exigem autenticação própria.
 - **Instância única:** o registro de conexões SSE e os jobs agendados assumem uma única
   instância da aplicação; não há coordenação entre réplicas.
