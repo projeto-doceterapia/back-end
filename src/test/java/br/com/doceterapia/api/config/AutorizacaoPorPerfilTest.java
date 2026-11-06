@@ -67,6 +67,7 @@ class AutorizacaoPorPerfilTest {
             PUT,    /pagamentos/1,
             DELETE, /pagamentos/1,
             PUT,    /configuracao-notificacao,
+            POST,   /notificacoes/teste,
             POST,   /configuracao-farol,
             PUT,    /configuracao-farol,
             GET,    /indicadores/financeiros,

@@ -25,6 +25,8 @@ public class ConfiguracaoNotificacaoMapper {
         entity.setResumoFimDiaAtivo(request.getResumoFimDiaAtivo());
         entity.setAlertaEstoqueBaixoAtivo(request.getEstoqueBaixoAtivo());
         entity.setAlertaDiaLotadoAtivo(request.getDiaLotadoAtivo());
+        entity.setAvisosAutomaticosAtivo(request.getAvisosAutomaticosAtivo());
+        entity.setAssistenteAtivo(request.getAssistenteAtivo());
     }
 
     public static ConfiguracaoNotificacaoResponseDTO toResponseDTO(ConfiguracaoNotificacao entity) {
@@ -39,6 +41,8 @@ public class ConfiguracaoNotificacaoMapper {
         dto.setResumoFimDiaAtivo(entity.getResumoFimDiaAtivo());
         dto.setEstoqueBaixoAtivo(entity.getAlertaEstoqueBaixoAtivo());
         dto.setDiaLotadoAtivo(entity.getAlertaDiaLotadoAtivo());
+        dto.setAvisosAutomaticosAtivo(entity.getAvisosAutomaticosAtivo());
+        dto.setAssistenteAtivo(entity.getAssistenteAtivo());
         return dto;
     }
 

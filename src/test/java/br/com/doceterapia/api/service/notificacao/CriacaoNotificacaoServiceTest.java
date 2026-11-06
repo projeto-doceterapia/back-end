@@ -147,6 +147,57 @@ class CriacaoNotificacaoServiceTest {
         assertEquals(LocalDateTime.of(2026, 10, 26, 8, 10), criada.getJanelaFim());
     }
 
+    private ComandoNotificacao comandoEstoqueBaixo() {
+        return ComandoNotificacao.imediata(
+                TipoNotificacao.ESTOQUE_BAIXO, "Estoque baixo", "Farinha baixa",
+                "ESTOQUE_BAIXO:insumo:1:2026-10-21", "estoque_baixo",
+                new ParametrosTeste("Farinha", 1), null, null);
+    }
+
+    private Notificacao criarComConfig() {
+        when(configuracaoService.obterOuCriar()).thenReturn(config);
+        when(repository.findByChaveUnicidade(anyString())).thenReturn(Optional.empty());
+        when(repository.save(any(Notificacao.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        return servicoCom(LocalDateTime.of(2026, 10, 21, 10, 0)).criar(comandoEstoqueBaixo());
+    }
+
+    @Test
+    @DisplayName("Avisos automáticos desligados gravam NAO_ENVIAR")
+    void avisosDesligadosGravaNaoEnviar() {
+        // Arrange
+        config.setAvisosAutomaticosAtivo(false);
+
+        // Act
+        Notificacao criada = criarComConfig();
+
+        // Assert
+        assertEquals(StatusEnvioNotificacao.NAO_ENVIAR, criada.getStatusEnvio());
+    }
+
+    @Test
+    @DisplayName("Assistente desligado grava NAO_ENVIAR")
+    void assistenteDesligadoGravaNaoEnviar() {
+        // Arrange
+        config.setAssistenteAtivo(false);
+
+        // Act
+        Notificacao criada = criarComConfig();
+
+        // Assert
+        assertEquals(StatusEnvioNotificacao.NAO_ENVIAR, criada.getStatusEnvio());
+    }
+
+    @Test
+    @DisplayName("Interruptores ligados gravam PENDENTE")
+    void interruptoresLigadosGravaPendente() {
+        // Act
+        Notificacao criada = criarComConfig();
+
+        // Assert
+        assertEquals(StatusEnvioNotificacao.PENDENTE, criada.getStatusEnvio());
+    }
+
     @Test
     @DisplayName("Chave de unicidade existente não cria uma nova notificação")
     void dedupNaoCriaNovamente() {

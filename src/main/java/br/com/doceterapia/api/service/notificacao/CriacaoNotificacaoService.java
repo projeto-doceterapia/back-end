@@ -26,7 +26,8 @@ import java.util.Optional;
  * deduplication by business key, computes the delivery window (summary jitter
  * or a short immediate window) inside business hours, serializes the typed
  * template parameters to JSON and marks the notification as PENDENTE for
- * delivery. Immediate-alert and daily-summary tasks call {@link #criar}.
+ * delivery, or NAO_ENVIAR when a global switch is off, which keeps it in the app
+ * only. Immediate-alert and daily-summary tasks call {@link #criar}.
  */
 @Service
 public class CriacaoNotificacaoService {
@@ -78,7 +79,9 @@ public class CriacaoNotificacaoService {
         ConfiguracaoNotificacao config = configuracaoService.obterOuCriar();
 
         LocalDateTime base = baseDaJanela(comando);
-        LocalDateTime inicio = moverParaExpediente(base, config);
+        LocalDateTime inicio = comando.janela() == ComandoNotificacao.Janela.AGORA
+                ? base
+                : moverParaExpediente(base, config);
         LocalDateTime fim = inicio.plus(duracaoDaJanela(comando));
 
         Notificacao entity = new Notificacao();
@@ -92,7 +95,9 @@ public class CriacaoNotificacaoService {
         entity.setParametros(serializar(comando.parametros()));
         entity.setJanelaInicio(inicio);
         entity.setJanelaFim(fim);
-        entity.setStatusEnvio(StatusEnvioNotificacao.PENDENTE);
+        entity.setStatusEnvio(ConfiguracaoNotificacaoService.enviaPorWhatsapp(config)
+                ? StatusEnvioNotificacao.PENDENTE
+                : StatusEnvioNotificacao.NAO_ENVIAR);
         entity.setPedido(comando.pedido());
         entity.setInsumo(comando.insumo());
 

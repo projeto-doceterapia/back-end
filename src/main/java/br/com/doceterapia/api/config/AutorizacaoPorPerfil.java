@@ -38,6 +38,7 @@ public final class AutorizacaoPorPerfil {
                         "/produtos", "/produtos/*/insumos",
                         "/cancelamentos/pedido/*",
                         "/configuracao-farol",
+                        "/notificacoes/teste",
                         "/usuarios").hasRole(PAPEL_DONA)
                 .requestMatchers(HttpMethod.PUT,
                         "/produtos/*", "/produtos/*/insumos/*",

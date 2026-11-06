@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import br.com.doceterapia.api.dto.ConfirmacaoEnvioRequestDTO;
+import br.com.doceterapia.api.dto.CooldownErroResponseDTO;
 import br.com.doceterapia.api.dto.NotificacaoAgendaResponseDTO;
 import br.com.doceterapia.api.dto.NotificacaoRequestDTO;
 import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
@@ -35,6 +36,21 @@ public interface NotificacaoControllerOpenApi {
             @RequestBody(description = "Dados da notificação a ser cadastrada", required = true,
                     content = @Content(schema = @Schema(implementation = NotificacaoRequestDTO.class)))
             NotificacaoRequestDTO request);
+
+    @Operation(summary = "Enviar notificação de teste",
+            description = "Cria uma notificação de teste, que aparece no sino e segue para o WhatsApp no próximo ciclo "
+                    + "de entrega. Com o assistente ou os avisos automáticos desligados, ela fica só no sino. "
+                    + "Há um intervalo mínimo entre dois testes, aplicado pelo servidor.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Notificação de teste criada com sucesso",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = NotificacaoResponseDTO.class))),
+            @ApiResponse(responseCode = "429", description = "Intervalo mínimo entre testes ainda não terminou",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CooldownErroResponseDTO.class))),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    ResponseEntity<NotificacaoResponseDTO> enviarNotificacaoTeste();
 
     @Operation(summary = "Listar todas as notificações",
             description = "Retorna uma lista com todas as notificações cadastradas no sistema")

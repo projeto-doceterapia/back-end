@@ -57,7 +57,9 @@ class ConfiguracaoNotificacaoControllerTest {
               "resumoInicioDiaAtivo": true,
               "resumoFimDiaAtivo": true,
               "estoqueBaixoAtivo": true,
-              "diaLotadoAtivo": true
+              "diaLotadoAtivo": true,
+              "avisosAutomaticosAtivo": true,
+              "assistenteAtivo": true
             }
             """;
 
@@ -103,6 +105,40 @@ class ConfiguracaoNotificacaoControllerTest {
                         .content(BODY_VALIDO))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.horarioResumoFim").value("17:30"));
+    }
+
+    @Test
+    @DisplayName("GET deve expor os dois interruptores")
+    void deveExporInterruptores() throws Exception {
+        ConfiguracaoNotificacaoResponseDTO resposta = respostaPadrao();
+        resposta.setAvisosAutomaticosAtivo(false);
+        resposta.setAssistenteAtivo(true);
+        when(service.buscar()).thenReturn(resposta);
+
+        mockMvc.perform(get("/configuracao-notificacao"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.avisosAutomaticosAtivo").value(false))
+                .andExpect(jsonPath("$.assistenteAtivo").value(true));
+    }
+
+    @Test
+    @DisplayName("PUT sem assistenteAtivo deve retornar 400 com mensagem em PT-BR")
+    void deveExigirAssistenteAtivo() throws Exception {
+        mockMvc.perform(put("/configuracao-notificacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(BODY_VALIDO.replace(",\n  \"assistenteAtivo\": true", "")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Flag do assistente ativo é obrigatória"));
+    }
+
+    @Test
+    @DisplayName("PUT sem avisosAutomaticosAtivo deve retornar 400 com mensagem em PT-BR")
+    void deveExigirAvisosAutomaticosAtivo() throws Exception {
+        mockMvc.perform(put("/configuracao-notificacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(BODY_VALIDO.replace("\"avisosAutomaticosAtivo\": true,", "")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Flag de avisos automáticos é obrigatória"));
     }
 
     @Test
