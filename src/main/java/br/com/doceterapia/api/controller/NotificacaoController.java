@@ -13,6 +13,7 @@ import br.com.doceterapia.api.dto.NotificacaoRequestDTO;
 import br.com.doceterapia.api.dto.NotificacaoResponseDTO;
 import br.com.doceterapia.api.service.NotificacaoEmitterRegistry;
 import br.com.doceterapia.api.service.NotificacaoService;
+import br.com.doceterapia.api.service.notificacao.NotificacaoTesteService;
 import br.com.doceterapia.api.swagger.NotificacaoControllerOpenApi;
 
 import java.time.LocalDateTime;
@@ -24,10 +25,13 @@ public class NotificacaoController implements NotificacaoControllerOpenApi {
 
     private final NotificacaoService service;
     private final NotificacaoEmitterRegistry emitterRegistry;
+    private final NotificacaoTesteService testeService;
 
-    public NotificacaoController(NotificacaoService service, NotificacaoEmitterRegistry emitterRegistry) {
+    public NotificacaoController(NotificacaoService service, NotificacaoEmitterRegistry emitterRegistry,
+                                 NotificacaoTesteService testeService) {
         this.service = service;
         this.emitterRegistry = emitterRegistry;
+        this.testeService = testeService;
     }
 
     @PostMapping
@@ -35,6 +39,12 @@ public class NotificacaoController implements NotificacaoControllerOpenApi {
     public ResponseEntity<NotificacaoResponseDTO> cadastrarNotificacao(
             @Valid @RequestBody NotificacaoRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.cadastrar(request));
+    }
+
+    @PostMapping("/teste")
+    @Override
+    public ResponseEntity<NotificacaoResponseDTO> enviarNotificacaoTeste() {
+        return ResponseEntity.status(HttpStatus.CREATED).body(testeService.enviar());
     }
 
     @GetMapping

@@ -1,5 +1,6 @@
 package br.com.doceterapia.api.exception;
 
+import br.com.doceterapia.api.dto.CooldownErroResponseDTO;
 import tools.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -58,6 +59,19 @@ public class RequestValidationExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleUsuarioEmailDuplicado(
             UsuarioEmailAlreadyExistsException ex, HttpServletRequest request) {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(NotificacaoTesteCooldownException.class)
+    public ResponseEntity<CooldownErroResponseDTO> handleNotificacaoTesteCooldown(
+            NotificacaoTesteCooldownException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.TOO_MANY_REQUESTS;
+        return ResponseEntity.status(status).body(new CooldownErroResponseDTO(
+                LocalDateTime.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI(),
+                ex.getSegundosRestantes()));
     }
 
     private String mensagemValorEnumInvalido(InvalidFormatException invalid) {

@@ -15,7 +15,8 @@ import java.time.LocalTime;
  * {@link Janela#IMEDIATA} starts at the current instant, {@link Janela#RESUMO}
  * starts at {@code horarioResumo} on the current day. In both cases the window
  * is moved to the next business start when it falls outside business hours or
- * working days.
+ * working days. {@link Janela#AGORA} starts at the current instant and is never
+ * moved: the owner testing the channel expects the message right away.
  */
 public record ComandoNotificacao(
         TipoNotificacao tipo,
@@ -31,7 +32,8 @@ public record ComandoNotificacao(
 
     public enum Janela {
         IMEDIATA,
-        RESUMO
+        RESUMO,
+        AGORA
     }
 
     public static ComandoNotificacao imediata(
@@ -45,6 +47,17 @@ public record ComandoNotificacao(
             Insumo insumo) {
         return new ComandoNotificacao(tipo, titulo, mensagem, chaveUnicidade,
                 templateKey, parametros, Janela.IMEDIATA, null, pedido, insumo);
+    }
+
+    public static ComandoNotificacao agora(
+            TipoNotificacao tipo,
+            String titulo,
+            String mensagem,
+            String chaveUnicidade,
+            String templateKey,
+            ParametrosTemplate parametros) {
+        return new ComandoNotificacao(tipo, titulo, mensagem, chaveUnicidade,
+                templateKey, parametros, Janela.AGORA, null, null, null);
     }
 
     public static ComandoNotificacao resumo(
