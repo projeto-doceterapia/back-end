@@ -1,6 +1,8 @@
 package br.com.doceterapia.api.controller;
 
+import br.com.doceterapia.api.config.AcessoNegadoHandler;
 import br.com.doceterapia.api.config.AutenticacaoEntryPoint;
+import br.com.doceterapia.api.config.EscritorErroSeguranca;
 import br.com.doceterapia.api.config.GerenciadorCookieSessao;
 import br.com.doceterapia.api.config.SecurityConfiguracao;
 import br.com.doceterapia.api.config.SegurancaProperties;
@@ -34,7 +36,6 @@ import java.util.Date;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -52,7 +53,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({
         SecurityConfiguracao.class,
         SegurancaProperties.class,
+        AcessoNegadoHandler.class,
         AutenticacaoEntryPoint.class,
+        EscritorErroSeguranca.class,
         GerenciadorCookieSessao.class,
         RequestValidationExceptionHandler.class
 })
@@ -106,12 +109,12 @@ class UsuarioControllerTest {
     @Test
     @DisplayName("GET /usuarios/me sem sessão devolve 401 com mensagem em português")
     void meSemSessaoRetorna401() throws Exception {
-        var resposta = mockMvc.perform(get("/usuarios/me"))
+        mockMvc.perform(get("/usuarios/me"))
                 .andExpect(status().isUnauthorized())
-                .andReturn()
-                .getResponse();
-
-        assertEquals(MENSAGEM_401, resposta.getErrorMessage());
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.error").value("Unauthorized"))
+                .andExpect(jsonPath("$.message").value(MENSAGEM_401))
+                .andExpect(jsonPath("$.path").value("/usuarios/me"));
     }
 
     @Test

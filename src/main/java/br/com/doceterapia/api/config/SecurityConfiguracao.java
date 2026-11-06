@@ -37,6 +37,7 @@ public class SecurityConfiguracao {
 
     private final AutenticacaoService autenticacaoService;
     private final AutenticacaoEntryPoint autenticacaoJwtEntryPoint;
+    private final AcessoNegadoHandler acessoNegadoHandler;
     private final SegurancaProperties segurancaProperties;
 
     private static final String[] URLS_PERMITIDAS = {
@@ -61,9 +62,11 @@ public class SecurityConfiguracao {
 
     public SecurityConfiguracao(AutenticacaoService autenticacaoService,
                                 AutenticacaoEntryPoint autenticacaoJwtEntryPoint,
+                                AcessoNegadoHandler acessoNegadoHandler,
                                 SegurancaProperties segurancaProperties) {
         this.autenticacaoService = autenticacaoService;
         this.autenticacaoJwtEntryPoint = autenticacaoJwtEntryPoint;
+        this.acessoNegadoHandler = acessoNegadoHandler;
         this.segurancaProperties = segurancaProperties;
     }
 
@@ -80,7 +83,8 @@ public class SecurityConfiguracao {
                         .anyRequest().access(usuarioLogado())
                 )
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint(autenticacaoJwtEntryPoint))
+                        .authenticationEntryPoint(autenticacaoJwtEntryPoint)
+                        .accessDeniedHandler(acessoNegadoHandler))
                 .sessionManagement(management -> management
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
