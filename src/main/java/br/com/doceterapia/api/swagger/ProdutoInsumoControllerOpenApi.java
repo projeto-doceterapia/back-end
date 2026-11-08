@@ -41,6 +41,7 @@ public interface ProdutoInsumoControllerOpenApi {
                     "- Unidade não informada"),
             @ApiResponse(responseCode = "404", description = "Produto ou Insumo com ID fornecido não encontrado"),
             @ApiResponse(responseCode = "409", description = "Insumo já está associado a este produto"),
+            @ApiResponse(responseCode = "422", description = "Unidade incompatível com a unidade do insumo"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     ResponseEntity<ProdutoInsumoResponseDTO> cadastrarInsumoNoProduto(
@@ -59,8 +60,9 @@ public interface ProdutoInsumoControllerOpenApi {
             @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos:\n" +
                     "- Quantidade menor ou igual a zero\n" +
                     "- Unidade não informada"),
-            @ApiResponse(responseCode = "404", description = "Vínculo, Produto ou Insumo com ID fornecido não encontrado"),
+            @ApiResponse(responseCode = "404", description = "Item da ficha técnica (do produto informado) ou Insumo com ID fornecido não encontrado"),
             @ApiResponse(responseCode = "409", description = "Insumo já está associado a este produto"),
+            @ApiResponse(responseCode = "422", description = "Unidade incompatível com a unidade do insumo"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     ResponseEntity<ProdutoInsumoResponseDTO> atualizarInsumoDoProduto(
@@ -76,7 +78,7 @@ public interface ProdutoInsumoControllerOpenApi {
             description = "Remove o vínculo entre um insumo e um produto")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Insumo removido com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Vínculo com ID fornecido não encontrado"),
+            @ApiResponse(responseCode = "404", description = "Item da ficha técnica do produto informado não encontrado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     ResponseEntity<Void> deletarInsumoDoProduto(
