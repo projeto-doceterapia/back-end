@@ -7,6 +7,7 @@ import br.com.doceterapia.api.mapper.MovimentacaoEstoqueMapper;
 import br.com.doceterapia.api.service.MovimentacaoEstoqueService;
 import br.com.doceterapia.api.service.MovimentacaoEstoqueService.EntradaCompra;
 import br.com.doceterapia.api.service.MovimentacaoEstoqueService.ResultadoMovimentacao;
+import br.com.doceterapia.api.service.PeriodoConsulta;
 import br.com.doceterapia.api.swagger.EstoqueMovimentoControllerOpenApi;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -55,10 +56,11 @@ public class EstoqueMovimentoController implements EstoqueMovimentoControllerOpe
     @GetMapping
     @Override
     public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> listarMovimentos(
-            @RequestParam Integer insumoId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime de,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ate) {
-        List<MovimentacaoEstoqueResponseDTO> movimentos = service.listarHistorico(insumoId, de, ate).stream()
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate,
+            @RequestParam(required = false) Integer insumoId) {
+        PeriodoConsulta periodo = PeriodoConsulta.de(de, ate);
+        List<MovimentacaoEstoqueResponseDTO> movimentos = service.listarPorPeriodo(insumoId, periodo).stream()
                 .map(movimentacao -> mapper.toResponseDTO(movimentacao, false))
                 .toList();
         return ResponseEntity.ok(movimentos);

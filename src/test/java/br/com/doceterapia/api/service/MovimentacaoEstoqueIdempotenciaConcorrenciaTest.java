@@ -81,7 +81,7 @@ class MovimentacaoEstoqueIdempotenciaConcorrenciaTest {
         pool.shutdown();
 
         assertEquals(1, naoDuplicados, "Apenas uma resposta deveria ser não-duplicada");
-        assertEquals(1, movimentacaoRepository.buscarHistorico(insumoId, null, null).size(),
+        assertEquals(1, movimentacaoRepository.buscarPorPeriodo(insumoId, java.time.LocalDateTime.of(2000, 1, 1, 0, 0), java.time.LocalDateTime.of(2100, 1, 1, 0, 0)).size(),
                 "Deveria existir exatamente uma movimentação");
         BigDecimal saldoFinal = insumoRepository.findById(insumoId).orElseThrow().getQuantidadeAtual();
         assertEquals(0, BigDecimal.TEN.compareTo(saldoFinal), "O saldo deveria refletir uma única entrada");

@@ -87,7 +87,7 @@ class InsumoServiceConcorrenciaTest {
 
     private BigDecimal somarMovimentacoes(Integer insumoId) {
         BigDecimal soma = BigDecimal.ZERO;
-        for (MovimentacaoEstoque movimentacao : movimentacaoRepository.buscarHistorico(insumoId, null, null)) {
+        for (MovimentacaoEstoque movimentacao : movimentacaoRepository.buscarPorPeriodo(insumoId, java.time.LocalDateTime.of(2000, 1, 1, 0, 0), java.time.LocalDateTime.of(2100, 1, 1, 0, 0))) {
             soma = soma.add(movimentacao.getQuantidade());
         }
         return soma;

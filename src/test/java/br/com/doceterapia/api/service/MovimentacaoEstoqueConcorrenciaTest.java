@@ -81,6 +81,6 @@ class MovimentacaoEstoqueConcorrenciaTest {
         BigDecimal saldoFinal = insumoRepository.findById(insumoId).orElseThrow().getQuantidadeAtual();
         assertEquals(0, BigDecimal.valueOf(threads).compareTo(saldoFinal),
                 "Saldo final deveria ser exatamente " + threads);
-        assertEquals(threads, movimentacaoRepository.buscarHistorico(insumoId, null, null).size());
+        assertEquals(threads, movimentacaoRepository.buscarPorPeriodo(insumoId, java.time.LocalDateTime.of(2000, 1, 1, 0, 0), java.time.LocalDateTime.of(2100, 1, 1, 0, 0)).size());
     }
 }

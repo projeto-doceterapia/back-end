@@ -101,4 +101,50 @@ class MovimentacaoEstoqueRepositoryTest {
         assertEquals(1, repository.findInsumoIdsByChaveNota("12345678901234567890123456789012345678901234").size());
         assertTrue(repository.findInsumoIdsByChaveNota("00000000000000000000000000000000000000000000").isEmpty());
     }
+
+    @Test
+    @DisplayName("Busca por período inclui o último dia inteiro e exclui o dia seguinte à meia-noite")
+    void buscarPorPeriodoComFimExclusivo() {
+        salvarEm("p:antes", LocalDateTime.of(2026, 11, 2, 23, 59));
+        salvarEm("p:inicio", LocalDateTime.of(2026, 11, 3, 0, 0));
+        salvarEm("p:fim", LocalDateTime.of(2026, 11, 4, 23, 59));
+        salvarEm("p:depois", LocalDateTime.of(2026, 11, 5, 0, 0));
+
+        var encontradas = repository.buscarPorPeriodo(null,
+                LocalDateTime.of(2026, 11, 3, 0, 0), LocalDateTime.of(2026, 11, 5, 0, 0));
+
+        assertEquals(2, encontradas.size());
+        assertEquals(LocalDateTime.of(2026, 11, 4, 23, 59), encontradas.get(0).getOcorridoEm());
+        assertEquals(LocalDateTime.of(2026, 11, 3, 0, 0), encontradas.get(1).getOcorridoEm());
+    }
+
+    @Test
+    @DisplayName("Busca por período filtra por insumo quando informado")
+    void buscarPorPeriodoFiltraPorInsumo() {
+        salvarEm("p:a", LocalDateTime.of(2026, 11, 3, 10, 0));
+        Insumo outro = new Insumo();
+        outro.setCategoria(insumo.getCategoria());
+        outro.setNome("Açúcar");
+        outro.setQuantidadeAtual(BigDecimal.ZERO);
+        outro.setQuantidadeMinima(BigDecimal.ZERO);
+        outro.setUnidade(UnidadeMedida.KG);
+        outro.setStatus(StatusAtivo.ATIVO);
+        outro = insumoRepository.save(outro);
+        MovimentacaoEstoque doOutro = novaMovimentacao("p:b", null);
+        doOutro.setInsumo(outro);
+        doOutro.setOcorridoEm(LocalDateTime.of(2026, 11, 3, 11, 0));
+        repository.saveAndFlush(doOutro);
+
+        var inicio = LocalDateTime.of(2026, 11, 3, 0, 0);
+        var fim = LocalDateTime.of(2026, 11, 4, 0, 0);
+
+        assertEquals(2, repository.buscarPorPeriodo(null, inicio, fim).size());
+        assertEquals(1, repository.buscarPorPeriodo(insumo.getIdInsumo(), inicio, fim).size());
+    }
+
+    private void salvarEm(String chave, LocalDateTime ocorridoEm) {
+        MovimentacaoEstoque m = novaMovimentacao(chave, null);
+        m.setOcorridoEm(ocorridoEm);
+        repository.saveAndFlush(m);
+    }
 }
