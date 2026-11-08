@@ -267,7 +267,7 @@ as demais rotas seguem a seção [Autenticação](#autenticação).
 | Recurso | Base | Operações |
 |---------|------|-----------|
 | Usuários / Autenticação | `/usuarios` | `POST` cadastro (só `DONA`, exige `perfil`; e-mail repetido devolve 409), `POST /login`, `POST /logout` (sempre 204, com ou sem sessão), `GET /me` usuário logado com `perfil`, `GET` lista com `perfil` (só `DONA`) |
-| Clientes | `/clientes` | CRUD; `DELETE` só inativa (`status` vira `INATIVO`) |
+| Clientes | `/clientes` | CRUD; `DELETE` só inativa (`status` vira `INATIVO`); `GET ?busca=` filtra por nome ou telefone; `GET /clientes/resumo` traz pedidos, gasto e último pedido por cliente; `cep` opcional com 8 dígitos |
 | Categorias de produto | `/categorias-produto` | CRUD |
 | Produtos | `/produtos` | CRUD |
 | Insumos de produto | `/produtos/{produtoId}/insumos` | CRUD |
