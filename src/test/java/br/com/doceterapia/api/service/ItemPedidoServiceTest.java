@@ -19,6 +19,8 @@ import br.com.doceterapia.api.mapper.ItemPedidoMapper;
 import br.com.doceterapia.api.repository.ItemPedidoRepository;
 import br.com.doceterapia.api.repository.ProdutoRepository;
 import br.com.doceterapia.api.repository.PedidoRepository;
+import br.com.doceterapia.api.service.precificacao.PrecificacaoProduto;
+import br.com.doceterapia.api.service.precificacao.PrecificacaoService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -43,6 +45,9 @@ class ItemPedidoServiceTest {
 
     @Mock
     private ItemPedidoMapper itemPedidoMapper;
+
+    @Mock
+    private PrecificacaoService precificacaoService;
 
     @InjectMocks
     private ItemPedidoService itemPedidoService;
@@ -229,5 +234,67 @@ class ItemPedidoServiceTest {
 
         verify(itemPedidoRepository).existsById(id);
         verify(itemPedidoRepository, never()).deleteById(any());
+    }
+
+    private ItemPedidoService servicoComMapperReal() {
+        ItemPedidoMapper mapperReal = new ItemPedidoMapper(produtoRepository, pedidoRepository, precificacaoService);
+        return new ItemPedidoService(itemPedidoRepository, mapperReal, produtoRepository, pedidoRepository);
+    }
+
+    private void prepararCadastroComCusto(BigDecimal custoCalculado) {
+        when(produtoRepository.existsById(1)).thenReturn(true);
+        when(pedidoRepository.existsById(1)).thenReturn(true);
+        when(produtoRepository.findById(1)).thenReturn(Optional.of(produto));
+        when(pedidoRepository.findById(1)).thenReturn(Optional.of(pedido));
+        when(precificacaoService.calcular(produto)).thenReturn(
+                new PrecificacaoProduto(custoCalculado, null, BigDecimal.ZERO));
+    }
+
+    @Test
+    @DisplayName("Deve congelar no item novo o custo calculado pela ficha")
+    void itemCongelaCustoCalculado() {
+        // Arrange
+        prepararCadastroComCusto(new BigDecimal("5.21"));
+        when(itemPedidoRepository.save(any(ItemPedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        ItemPedido resultado = servicoComMapperReal().cadastrar(itemPedidoRequestDTO);
+
+        // Assert
+        assertEquals(0, new BigDecimal("5.21").compareTo(resultado.getCustoEstimadoItem()));
+        assertEquals(0, new BigDecimal("86.59").compareTo(resultado.getMargemLucroItem()));
+    }
+
+    @Test
+    @DisplayName("Deve gravar custo e margem nulos quando o custo está indisponível")
+    void itemSemCustoCalculadoGravaNulos() {
+        // Arrange
+        prepararCadastroComCusto(null);
+        when(itemPedidoRepository.save(any(ItemPedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        ItemPedido resultado = servicoComMapperReal().cadastrar(itemPedidoRequestDTO);
+
+        // Assert
+        assertNull(resultado.getCustoEstimadoItem());
+        assertNull(resultado.getMargemLucroItem());
+    }
+
+    @Test
+    @DisplayName("Não deve recalcular o custo de um item antigo quando a ficha muda")
+    void itemAntigoNaoMudaComFichaNova() {
+        // Arrange
+        when(itemPedidoRepository.existsById(1)).thenReturn(true);
+        when(itemPedidoRepository.findById(1)).thenReturn(Optional.of(itemPedido));
+        when(produtoRepository.existsById(1)).thenReturn(true);
+        when(pedidoRepository.existsById(1)).thenReturn(true);
+        when(itemPedidoRepository.save(any(ItemPedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        ItemPedido resultado = servicoComMapperReal().atualizar(1, itemPedidoRequestDTO);
+
+        // Assert
+        assertEquals(0, BigDecimal.valueOf(50.00).compareTo(resultado.getCustoEstimadoItem()));
+        verifyNoInteractions(precificacaoService);
     }
 }

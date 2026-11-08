@@ -7,6 +7,7 @@ import br.com.doceterapia.api.entity.Pedido;
 import br.com.doceterapia.api.entity.Produto;
 import br.com.doceterapia.api.repository.PedidoRepository;
 import br.com.doceterapia.api.repository.ProdutoRepository;
+import br.com.doceterapia.api.service.precificacao.PrecificacaoService;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -16,10 +17,13 @@ public class ItemPedidoMapper {
 
     private final ProdutoRepository produtoRepository;
     private final PedidoRepository pedidoRepository;
+    private final PrecificacaoService precificacaoService;
 
-    public ItemPedidoMapper(ProdutoRepository produtoRepository, PedidoRepository pedidoRepository) {
+    public ItemPedidoMapper(ProdutoRepository produtoRepository, PedidoRepository pedidoRepository,
+                            PrecificacaoService precificacaoService) {
         this.produtoRepository = produtoRepository;
         this.pedidoRepository = pedidoRepository;
+        this.precificacaoService = precificacaoService;
     }
 
     public ItemPedido toEntity(ItemPedidoRequestDTO dto) {
@@ -34,11 +38,13 @@ public class ItemPedidoMapper {
         entity.setQuantidade(dto.getQuantidade());
         entity.setValorUnitario(dto.getValorUnitario());
         entity.setPrecoOriginalProduto(produto.getPrecoAtual());
-        entity.setCustoEstimadoItem(produto.getCustoEstimado());
+
+        BigDecimal custoEstimado = precificacaoService.calcular(produto).custoEstimado();
+        entity.setCustoEstimadoItem(custoEstimado);
 
         BigDecimal valorTotal = dto.getValorUnitario().multiply(dto.getQuantidade());
         entity.setValorTotal(valorTotal);
-        entity.setMargemLucroItem(valorTotal.subtract(produto.getCustoEstimado()));
+        entity.setMargemLucroItem(custoEstimado == null ? null : valorTotal.subtract(custoEstimado));
 
         entity.setObservacao(dto.getObservacao());
         return entity;
