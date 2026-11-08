@@ -11,20 +11,44 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import br.com.doceterapia.api.dto.ClienteRequestDTO;
 import br.com.doceterapia.api.dto.ClienteResponseDTO;
+import br.com.doceterapia.api.dto.ClienteResumoResponseDTO;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
 @Tag(name = "Clientes", description = "Endpoints para gerenciamento de clientes")
 public interface ClienteControllerOpenApi {
 
-    @Operation(summary = "Listar todos os clientes", description = "Retorna uma lista com todos os clientes cadastrados no sistema")
+    @Operation(summary = "Listar clientes", description = "Retorna os clientes cadastrados, inclusive os inativos. "
+            + "Com busca, filtra pelo nome ou pelos dígitos do telefone")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Clientes listados com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ClienteResponseDTO.class))),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-        ResponseEntity<List<ClienteResponseDTO>> listarClientes();
+    ResponseEntity<List<ClienteResponseDTO>> listarClientes(
+            @Parameter(description = "Parte do nome ou dígitos do telefone do cliente, sem diferenciar maiúsculas",
+                    example = "exem")
+            String busca);
+
+    @Operation(summary = "Resumir clientes",
+            description = "Lista os clientes com total de pedidos, gasto total e data do último pedido, "
+                    + "sem contar pedidos cancelados nem orçamentos. Clientes inativos ficam de fora por padrão. "
+                    + "O gasto total só é informado para o perfil DONA")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Resumo listado com sucesso",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ClienteResumoResponseDTO.class))),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    ResponseEntity<List<ClienteResumoResponseDTO>> resumirClientes(
+            @Parameter(description = "Parte do nome ou dígitos do telefone do cliente, sem diferenciar maiúsculas",
+                    example = "exem")
+            String busca,
+            @Parameter(description = "Inclui os clientes inativos", example = "false")
+            boolean incluirInativos,
+            @Parameter(hidden = true) Authentication authentication);
 
     @Operation(summary = "Cadastrar novo cliente",
             description = "Cria um novo cliente no sistema com os dados fornecidos")
@@ -74,5 +98,18 @@ public interface ClienteControllerOpenApi {
     })
         ResponseEntity<Void> deletarCliente(
             @Parameter(description = "ID do cliente a ser inativado", example = "1")
+            Integer id);
+
+    @Operation(summary = "Reativar cliente",
+            description = "Volta o cliente inativo para ATIVO. Somente o perfil DONA")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Cliente reativado com sucesso",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ClienteResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Cliente com ID fornecido não encontrado"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    ResponseEntity<ClienteResponseDTO> reativarCliente(
+            @Parameter(description = "ID do cliente a ser reativado", example = "1")
             Integer id);
 }
