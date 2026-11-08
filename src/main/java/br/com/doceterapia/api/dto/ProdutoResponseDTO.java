@@ -44,6 +44,9 @@ public class ProdutoResponseDTO {
     @Schema(description = "Descrição do produto", example = "Bolo de chocolate com recheio de brigadeiro")
     private String descricao;
 
+    @Schema(description = "Indica que o preço atual está abaixo do preço sugerido; falso quando faltar algum dos dois", example = "true")
+    private boolean precoAbaixoDoSugerido;
+
     public Integer getIdProduto() {
         return idProduto;
     }
@@ -138,5 +141,13 @@ public class ProdutoResponseDTO {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
+    }
+
+    public boolean isPrecoAbaixoDoSugerido() {
+        return precoAbaixoDoSugerido;
+    }
+
+    public void setPrecoAbaixoDoSugerido(boolean precoAbaixoDoSugerido) {
+        this.precoAbaixoDoSugerido = precoAbaixoDoSugerido;
     }
 }

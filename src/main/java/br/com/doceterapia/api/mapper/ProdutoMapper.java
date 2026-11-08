@@ -8,6 +8,8 @@ import br.com.doceterapia.api.entity.Produto;
 import br.com.doceterapia.api.repository.CategoriaProdutoRepository;
 import br.com.doceterapia.api.service.precificacao.PrecificacaoProduto;
 
+import java.math.BigDecimal;
+
 @Component
 public class ProdutoMapper {
 
@@ -47,6 +49,11 @@ public class ProdutoMapper {
         dto.setStatus(entity.getStatus());
         dto.setDescricao(entity.getDescricao());
         dto.setQuantidadeProduzida(entity.getQuantidadeProduzida());
+        dto.setPrecoAbaixoDoSugerido(precoAbaixoDoSugerido(entity.getPrecoAtual(), precificacao.precoSugerido()));
         return dto;
+    }
+
+    private boolean precoAbaixoDoSugerido(BigDecimal precoAtual, BigDecimal precoSugerido) {
+        return precoAtual != null && precoSugerido != null && precoAtual.compareTo(precoSugerido) < 0;
     }
 }
