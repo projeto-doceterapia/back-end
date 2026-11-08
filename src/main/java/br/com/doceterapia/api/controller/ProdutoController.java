@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import br.com.doceterapia.api.dto.ProdutoRequestDTO;
 import br.com.doceterapia.api.dto.ProdutoResponseDTO;
-import br.com.doceterapia.api.mapper.ProdutoMapper;
 import br.com.doceterapia.api.service.ProdutoService;
 import br.com.doceterapia.api.swagger.ProdutoControllerOpenApi;
 
@@ -17,24 +16,28 @@ import java.util.List;
 public class ProdutoController implements ProdutoControllerOpenApi {
 
     private final ProdutoService service;
-    private final ProdutoMapper mapper;
 
-    public ProdutoController(ProdutoService service, ProdutoMapper mapper) {
+    public ProdutoController(ProdutoService service) {
         this.service = service;
-        this.mapper = mapper;
     }
 
     @GetMapping
     @Override
     public ResponseEntity<List<ProdutoResponseDTO>> listarProdutos() {
-        return ResponseEntity.ok(service.listarTodos().stream().map(mapper::toResponseDTO).toList());
+        return ResponseEntity.ok(service.listarTodos());
+    }
+
+    @GetMapping("/{id}")
+    @Override
+    public ResponseEntity<ProdutoResponseDTO> buscarProduto(@PathVariable Integer id) {
+        return ResponseEntity.ok(service.buscarPorId(id));
     }
 
     @PostMapping
     @Override
     public ResponseEntity<ProdutoResponseDTO> cadastrarProduto(
             @Valid @org.springframework.web.bind.annotation.RequestBody ProdutoRequestDTO request) {
-        ProdutoResponseDTO response = mapper.toResponseDTO(service.cadastrar(request));
+        ProdutoResponseDTO response = service.cadastrar(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -43,7 +46,7 @@ public class ProdutoController implements ProdutoControllerOpenApi {
     public ResponseEntity<ProdutoResponseDTO> atualizarProduto(
             @PathVariable Integer id,
             @Valid @org.springframework.web.bind.annotation.RequestBody ProdutoRequestDTO request) {
-        ProdutoResponseDTO response = mapper.toResponseDTO(service.atualizar(id, request));
+        ProdutoResponseDTO response = service.atualizar(id, request);
         return ResponseEntity.ok(response);
     }
 
