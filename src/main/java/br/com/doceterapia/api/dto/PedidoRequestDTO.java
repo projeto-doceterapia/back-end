@@ -6,6 +6,7 @@ import br.com.doceterapia.api.enums.TipoPedido;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -31,6 +32,10 @@ public class PedidoRequestDTO {
     @Size(max = 255, message = "Endereço de entrega deve ter no máximo 255 caracteres")
     @Schema(description = "Endereço de entrega do pedido", example = "Rua das Flores, 123")
     private String enderecoEntrega;
+
+    @Pattern(regexp = "\\d{8}", message = "CEP deve ter exatamente 8 dígitos")
+    @Schema(description = "CEP com 8 dígitos, sem traço", example = "01001000", nullable = true)
+    private String cep;
 
     @NotNull(message = "Data de entrega é obrigatória")
     @FutureOrPresent(message = "Data de entrega deve ser hoje ou uma data futura")
@@ -94,5 +99,13 @@ public class PedidoRequestDTO {
 
     public void setAnotacao(String anotacao) {
         this.anotacao = anotacao;
+    }
+
+    public String getCep() {
+        return cep;
+    }
+
+    public void setCep(String cep) {
+        this.cep = cep;
     }
 }

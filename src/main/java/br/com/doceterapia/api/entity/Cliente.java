@@ -25,6 +25,9 @@ public class Cliente {
 
     private String endereco;
 
+    @Column(length = 8)
+    private String cep;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private TipoPessoa tipoPessoa;
@@ -102,5 +105,13 @@ public class Cliente {
 
     public void setObservacao(String observacao) {
         this.observacao = observacao;
+    }
+
+    public String getCep() {
+        return cep;
+    }
+
+    public void setCep(String cep) {
+        this.cep = cep;
     }
 }

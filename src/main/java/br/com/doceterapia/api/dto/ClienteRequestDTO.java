@@ -6,6 +6,7 @@ import br.com.doceterapia.api.enums.TipoPessoa;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Schema(description = "DTO para requisição de cadastro de cliente")
@@ -25,6 +26,10 @@ public class ClienteRequestDTO {
     @Size(max = 255, message = "Endereço não pode exceder 255 caracteres")
     @Schema(description = "Endereço completo do cliente", example = "Rua das Flores, 123, Apto 45, São Paulo, SP", maxLength = 255)
     private String endereco;
+
+    @Pattern(regexp = "\\d{8}", message = "CEP deve ter exatamente 8 dígitos")
+    @Schema(description = "CEP com 8 dígitos, sem traço", example = "01001000", nullable = true)
+    private String cep;
 
     @NotNull(message = "Tipo de pessoa é obrigatório")
     @Schema(description = "Tipo de pessoa", example = "FISICA")
@@ -95,5 +100,13 @@ public class ClienteRequestDTO {
 
     public void setObservacao(String observacao) {
         this.observacao = observacao;
+    }
+
+    public String getCep() {
+        return cep;
+    }
+
+    public void setCep(String cep) {
+        this.cep = cep;
     }
 }

@@ -42,6 +42,10 @@ public class Pedido {
     private FormaEntrega formaEntrega;
 
     private String enderecoEntrega;
+
+    @Column(length = 8)
+    private String cep;
+
     private LocalDate dataEntrega;
 
     @Column(columnDefinition = "TEXT")
@@ -135,5 +139,13 @@ public class Pedido {
 
     public void setDataConfirmacao(LocalDateTime dataConfirmacao) {
         this.dataConfirmacao = dataConfirmacao;
+    }
+
+    public String getCep() {
+        return cep;
+    }
+
+    public void setCep(String cep) {
+        this.cep = cep;
     }
 }
