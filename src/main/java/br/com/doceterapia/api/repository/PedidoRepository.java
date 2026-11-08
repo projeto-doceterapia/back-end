@@ -6,7 +6,11 @@ import org.springframework.data.repository.query.Param;
 import br.com.doceterapia.api.entity.Pedido;
 import br.com.doceterapia.api.enums.StatusPedido;
 
+import br.com.doceterapia.api.repository.projecao.ContagemPorDia;
+import br.com.doceterapia.api.repository.projecao.ContagemPorStatus;
+
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 public interface PedidoRepository extends JpaRepository<Pedido, Integer> {
 
@@ -33,4 +37,30 @@ public interface PedidoRepository extends JpaRepository<Pedido, Integer> {
             + "AND p.statusPedido <> br.com.doceterapia.api.enums.StatusPedido.CANCELADO "
             + "ORDER BY p.dataEntrega, p.idPedido")
     List<Pedido> buscarEntreDatas(@Param("de") LocalDate de, @Param("ate") LocalDate ate);
+
+    @Query("SELECT new br.com.doceterapia.api.repository.projecao.ContagemPorStatus(p.statusPedido, COUNT(p)) "
+            + "FROM Pedido p WHERE p.dataEntrega BETWEEN :de AND :ate GROUP BY p.statusPedido")
+    List<ContagemPorStatus> contarPorStatus(@Param("de") LocalDate de, @Param("ate") LocalDate ate);
+
+    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.dataEntrega BETWEEN :de AND :ate "
+            + "AND p.statusPedido IN :statuses")
+    long contarPorStatusIn(@Param("de") LocalDate de, @Param("ate") LocalDate ate,
+                           @Param("statuses") Collection<StatusPedido> statuses);
+
+    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.dataEntrega BETWEEN :de AND :ate "
+            + "AND p.statusPedido <> br.com.doceterapia.api.enums.StatusPedido.CANCELADO")
+    long contarAtivosEntre(@Param("de") LocalDate de, @Param("ate") LocalDate ate);
+
+    @Query("SELECT new br.com.doceterapia.api.repository.projecao.ContagemPorDia(p.dataEntrega, COUNT(p)) "
+            + "FROM Pedido p WHERE p.dataEntrega BETWEEN :de AND :ate "
+            + "AND p.statusPedido <> br.com.doceterapia.api.enums.StatusPedido.CANCELADO "
+            + "GROUP BY p.dataEntrega ORDER BY p.dataEntrega")
+    List<ContagemPorDia> contarAtivosPorDia(@Param("de") LocalDate de, @Param("ate") LocalDate ate);
+
+    @Query("SELECT new br.com.doceterapia.api.repository.projecao.ContagemPorDia(p.dataEntrega, COUNT(p)) "
+            + "FROM Pedido p WHERE p.dataEntrega BETWEEN :de AND :ate "
+            + "AND p.statusPedido <> br.com.doceterapia.api.enums.StatusPedido.CANCELADO "
+            + "GROUP BY p.dataEntrega HAVING COUNT(p) >= :limite ORDER BY p.dataEntrega")
+    List<ContagemPorDia> buscarDiasLotados(@Param("de") LocalDate de, @Param("ate") LocalDate ate,
+                                           @Param("limite") long limite);
 }
