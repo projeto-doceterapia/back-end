@@ -54,7 +54,7 @@ class IndicadorControllerTest {
                 periodo, new EnumMap<>(StatusPedido.class), 0, 0, List.of(), List.of(), List.of(), List.of()));
         BigDecimal zero = new BigDecimal("0.00");
         when(service.financeiros(any(PeriodoConsulta.class))).thenReturn(new IndicadoresFinanceirosResponseDTO(
-                periodo, new FaturamentoDTO(zero, zero, zero), zero, zero, zero, List.of(),
+                periodo, new FaturamentoDTO(zero, zero, zero), zero, zero, zero, zero, List.of(),
                 new CanceladosDTO(0, zero, zero, zero), new EmOrcamentoDTO(0, zero), List.of()));
     }
 

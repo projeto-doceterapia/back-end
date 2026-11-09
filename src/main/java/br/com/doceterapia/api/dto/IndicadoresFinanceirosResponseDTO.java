@@ -9,6 +9,7 @@ public record IndicadoresFinanceirosResponseDTO(
         BigDecimal ticketMedio,
         BigDecimal gastosInsumos,
         BigDecimal lucroEstimado,
+        BigDecimal margem,
         List<ProdutoValorDTO> produtosMaisVendidosPorFaturamento,
         CanceladosDTO cancelados,
         EmOrcamentoDTO emOrcamento,

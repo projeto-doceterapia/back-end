@@ -119,6 +119,7 @@ public class IndicadorService {
                 ticketMedio(total, pedidoRepository.contarPorStatusIn(de, ate, VENDAS)),
                 gastos,
                 total.subtract(gastos),
+                margem(total, total.subtract(gastos)),
                 itemPedidoRepository.somarValorPorProduto(de, ate, VENDAS, ranking()).stream()
                         .map(this::paraProdutoValor).toList(),
                 cancelados(de, ate),
@@ -155,7 +156,7 @@ public class IndicadorService {
                 pago, devolvido, pago.subtract(devolvido));
     }
 
-    // Months without sales are filled with zero so the chart always has the same number of points.
+    // Months without sales or purchases are filled with zero so the chart always has the same points.
     private List<FaturamentoMesDTO> faturamentoPorMes(LocalDate ate) {
         YearMonth ultimo = YearMonth.from(ate);
         YearMonth primeiro = ultimo.minusMonths(MESES_SERIE - 1L);
@@ -163,11 +164,26 @@ public class IndicadorService {
         for (TotalPorMes linha : itemPedidoRepository.somarValorPorMes(primeiro.atDay(1), ultimo.atEndOfMonth(), VENDAS)) {
             totais.put(YearMonth.of(linha.ano(), linha.mes()), linha.total());
         }
+        Map<YearMonth, BigDecimal> gastos = new HashMap<>();
+        for (TotalPorMes linha : movimentacaoRepository.somarGastosCompraPorMes(
+                primeiro.atDay(1).atStartOfDay(), ultimo.plusMonths(1).atDay(1).atStartOfDay())) {
+            gastos.put(YearMonth.of(linha.ano(), linha.mes()), linha.total());
+        }
         List<FaturamentoMesDTO> serie = new ArrayList<>();
         for (YearMonth mes = primeiro; !mes.isAfter(ultimo); mes = mes.plusMonths(1)) {
-            serie.add(new FaturamentoMesDTO(mes.toString(), dinheiro(totais.get(mes))));
+            BigDecimal total = dinheiro(totais.get(mes));
+            BigDecimal gasto = dinheiro(gastos.get(mes));
+            serie.add(new FaturamentoMesDTO(mes.toString(), total, gasto, total.subtract(gasto)));
         }
         return serie;
+    }
+
+    // Percentage of billing kept as estimated profit; zero without billing.
+    private BigDecimal margem(BigDecimal total, BigDecimal lucro) {
+        if (total.signum() == 0) {
+            return dinheiro(null);
+        }
+        return lucro.multiply(BigDecimal.valueOf(100)).divide(total, ESCALA_MONETARIA, RoundingMode.HALF_UP);
     }
 
     private BigDecimal ticketMedio(BigDecimal total, long pedidos) {

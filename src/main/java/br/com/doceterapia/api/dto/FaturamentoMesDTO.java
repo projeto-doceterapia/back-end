@@ -2,5 +2,5 @@ package br.com.doceterapia.api.dto;
 
 import java.math.BigDecimal;
 
-public record FaturamentoMesDTO(String mes, BigDecimal total) {
+public record FaturamentoMesDTO(String mes, BigDecimal total, BigDecimal gastos, BigDecimal lucro) {
 }

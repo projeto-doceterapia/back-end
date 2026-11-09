@@ -292,7 +292,8 @@ no máximo 366 dias entre eles; fora disso a resposta é 400 em PT-BR). O perío
 dos pedidos. Pedidos cancelados e em orçamento ficam fora do faturamento: os cancelados aparecem em `cancelados`
 (pago, devolvido e retido) e os orçamentos em `emOrcamento`. Os gastos com insumos somam quantidade vezes custo
 unitário das entradas de compra lançadas no período, então podem diferir da nota por arredondamento, e o lucro
-estimado é o faturamento menos esses gastos. Os insumos abaixo do mínimo refletem o saldo atual, não o do período.
+estimado é o faturamento menos esses gastos. A `margem` é o lucro estimado em porcentagem do faturamento (0,00 sem faturamento),
+e `faturamentoPorMes` traz, para cada um dos 6 meses, `total`, `gastos` (compras do mês) e `lucro`. Os insumos abaixo do mínimo refletem o saldo atual, não o do período.
 
 ## Notificações
 

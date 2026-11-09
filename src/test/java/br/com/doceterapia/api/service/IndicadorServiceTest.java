@@ -129,6 +129,17 @@ class IndicadorServiceTest {
     }
 
     @Test
+    @DisplayName("Margem é o lucro estimado sobre o faturamento, e 0,00 sem faturamento")
+    void margem() {
+        assertEquals(new BigDecimal("0.00"), service.financeiros(NOVEMBRO).margem());
+
+        when(itemPedidoRepository.somarValor(any(), any(), anyCollection())).thenReturn(new BigDecimal("200.00"));
+        when(movimentacaoRepository.somarGastosCompra(any(), any())).thenReturn(new BigDecimal("50.00"));
+
+        assertEquals(new BigDecimal("75.00"), service.financeiros(NOVEMBRO).margem());
+    }
+
+    @Test
     @DisplayName("A receber é o total menos o recebido")
     void aReceber() {
         when(itemPedidoRepository.somarValor(any(), any(), eq(List.of(

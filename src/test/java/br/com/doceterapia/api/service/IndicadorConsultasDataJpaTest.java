@@ -213,6 +213,7 @@ class IndicadorConsultasDataJpaTest {
 
         assertEquals(new BigDecimal("109.30"), resposta.gastosInsumos());
         assertEquals(new BigDecimal("285.70"), resposta.lucroEstimado());
+        assertEquals(new BigDecimal("72.33"), resposta.margem());
     }
 
     @Test
@@ -263,6 +264,10 @@ class IndicadorConsultasDataJpaTest {
         assertEquals(new BigDecimal("36.00"), resposta.faturamentoPorMes().get(4).total());
         assertEquals("2026-11", resposta.faturamentoPorMes().get(5).mes());
         assertEquals(new BigDecimal("395.00"), resposta.faturamentoPorMes().get(5).total());
+        assertEquals(new BigDecimal("109.30"), resposta.faturamentoPorMes().get(5).gastos());
+        assertEquals(new BigDecimal("285.70"), resposta.faturamentoPorMes().get(5).lucro());
+        assertEquals(new BigDecimal("10.00"), resposta.faturamentoPorMes().get(4).gastos());
+        assertEquals(new BigDecimal("26.00"), resposta.faturamentoPorMes().get(4).lucro());
     }
 
     @Test

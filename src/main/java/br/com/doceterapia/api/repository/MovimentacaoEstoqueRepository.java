@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import br.com.doceterapia.api.repository.projecao.TotalPorMes;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,4 +37,14 @@ public interface MovimentacaoEstoqueRepository extends JpaRepository<Movimentaca
             + "AND m.custoUnitario IS NOT NULL AND m.ocorridoEm >= :inicio AND m.ocorridoEm < :fimExclusivo")
     BigDecimal somarGastosCompra(@Param("inicio") LocalDateTime inicio,
                                  @Param("fimExclusivo") LocalDateTime fimExclusivo);
+
+    // Purchases grouped by month, the same cost basis as the period spending.
+    @Query("SELECT new br.com.doceterapia.api.repository.projecao.TotalPorMes("
+            + "YEAR(m.ocorridoEm), MONTH(m.ocorridoEm), SUM(m.quantidade * m.custoUnitario)) "
+            + "FROM MovimentacaoEstoque m "
+            + "WHERE m.tipo = br.com.doceterapia.api.enums.TipoMovimentacao.ENTRADA_COMPRA "
+            + "AND m.custoUnitario IS NOT NULL AND m.ocorridoEm >= :inicio AND m.ocorridoEm < :fimExclusivo "
+            + "GROUP BY YEAR(m.ocorridoEm), MONTH(m.ocorridoEm)")
+    List<TotalPorMes> somarGastosCompraPorMes(@Param("inicio") LocalDateTime inicio,
+                                              @Param("fimExclusivo") LocalDateTime fimExclusivo);
 }
