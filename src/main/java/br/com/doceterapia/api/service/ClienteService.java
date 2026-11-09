@@ -61,10 +61,8 @@ public class ClienteService {
         return cliente;
     }
 
-    public Cliente atualizar(Integer id, ClienteRequestDTO request) {
-        if (!repository.existsById(id)) {
-            throw new ClienteIdDontExistsException();
-        }
+    public Cliente atualizar(Integer id, ClienteRequestDTO request, boolean ehDona) {
+        Cliente existente = repository.findById(id).orElseThrow(ClienteIdDontExistsException::new);
 
         if (repository.existsByTelefoneAndIdClienteNot(request.getTelefone(), id)) {
             throw new TelefoneAlreadyExistsException();
@@ -72,6 +70,10 @@ public class ClienteService {
 
         Cliente cliente = ClienteMapper.toCliente(request);
         cliente.setIdCliente(id);
+        // Only the owner may change the status; an employee's value is ignored so the stored one stays.
+        if (!ehDona) {
+            cliente.setStatus(existente.getStatus());
+        }
         repository.save(cliente);
         return cliente;
     }

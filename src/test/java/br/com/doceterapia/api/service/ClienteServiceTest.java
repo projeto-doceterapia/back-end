@@ -142,18 +142,18 @@ class ClienteServiceTest {
     void testAtualizarCliente() {
         // Arrange
         Integer idCliente = 1;
-        when(clienteRepository.existsById(idCliente)).thenReturn(true);
+        when(clienteRepository.findById(idCliente)).thenReturn(Optional.of(cliente));
         when(clienteRepository.existsByTelefoneAndIdClienteNot(clienteRequestDTO.getTelefone(), idCliente))
                 .thenReturn(false);
         when(clienteRepository.save(any(Cliente.class))).thenReturn(cliente);
 
         // Act
-        Cliente resultado = clienteService.atualizar(idCliente, clienteRequestDTO);
+        Cliente resultado = clienteService.atualizar(idCliente, clienteRequestDTO, true);
 
         // Assert
         assertNotNull(resultado);
         assertEquals(idCliente, resultado.getIdCliente());
-        verify(clienteRepository).existsById(idCliente);
+        verify(clienteRepository).findById(idCliente);
         verify(clienteRepository).existsByTelefoneAndIdClienteNot(clienteRequestDTO.getTelefone(), idCliente);
         verify(clienteRepository).save(any(Cliente.class));
     }
@@ -163,14 +163,14 @@ class ClienteServiceTest {
     void testAtualizarClienteInexistente() {
         // Arrange
         Integer idCliente = 999;
-        when(clienteRepository.existsById(idCliente)).thenReturn(false);
+        when(clienteRepository.findById(idCliente)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(ClienteIdDontExistsException.class, () -> {
-            clienteService.atualizar(idCliente, clienteRequestDTO);
+            clienteService.atualizar(idCliente, clienteRequestDTO, true);
         });
 
-        verify(clienteRepository).existsById(idCliente);
+        verify(clienteRepository).findById(idCliente);
         verify(clienteRepository, never()).save(any());
     }
 
@@ -179,18 +179,56 @@ class ClienteServiceTest {
     void testAtualizarClienteTelefoneDuplicado() {
         // Arrange
         Integer idCliente = 1;
-        when(clienteRepository.existsById(idCliente)).thenReturn(true);
+        when(clienteRepository.findById(idCliente)).thenReturn(Optional.of(cliente));
         when(clienteRepository.existsByTelefoneAndIdClienteNot(clienteRequestDTO.getTelefone(), idCliente))
                 .thenReturn(true);
 
         // Act & Assert
         assertThrows(TelefoneAlreadyExistsException.class, () -> {
-            clienteService.atualizar(idCliente, clienteRequestDTO);
+            clienteService.atualizar(idCliente, clienteRequestDTO, true);
         });
 
-        verify(clienteRepository).existsById(idCliente);
+        verify(clienteRepository).findById(idCliente);
         verify(clienteRepository).existsByTelefoneAndIdClienteNot(clienteRequestDTO.getTelefone(), idCliente);
         verify(clienteRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Atualizar mantém o status gravado quando quem chama não é a dona")
+    void atualizarIgnoraStatusDaFuncionaria() {
+        // Arrange
+        Cliente gravado = new Cliente();
+        gravado.setIdCliente(1);
+        gravado.setStatus(StatusAtivo.ATIVO);
+        clienteRequestDTO.setStatus(StatusAtivo.INATIVO);
+        when(clienteRepository.findById(1)).thenReturn(Optional.of(gravado));
+        when(clienteRepository.existsByTelefoneAndIdClienteNot(any(), any())).thenReturn(false);
+        when(clienteRepository.save(any(Cliente.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        Cliente resultado = clienteService.atualizar(1, clienteRequestDTO, false);
+
+        // Assert
+        assertEquals(StatusAtivo.ATIVO, resultado.getStatus());
+    }
+
+    @Test
+    @DisplayName("Atualizar aplica o status enviado quando quem chama é a dona")
+    void atualizarAplicaStatusDaDona() {
+        // Arrange
+        Cliente gravado = new Cliente();
+        gravado.setIdCliente(1);
+        gravado.setStatus(StatusAtivo.ATIVO);
+        clienteRequestDTO.setStatus(StatusAtivo.INATIVO);
+        when(clienteRepository.findById(1)).thenReturn(Optional.of(gravado));
+        when(clienteRepository.existsByTelefoneAndIdClienteNot(any(), any())).thenReturn(false);
+        when(clienteRepository.save(any(Cliente.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        Cliente resultado = clienteService.atualizar(1, clienteRequestDTO, true);
+
+        // Assert
+        assertEquals(StatusAtivo.INATIVO, resultado.getStatus());
     }
 
     @Test

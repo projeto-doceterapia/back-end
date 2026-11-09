@@ -69,7 +69,7 @@ public interface ClienteControllerOpenApi {
             ClienteRequestDTO request);
 
     @Operation(summary = "Atualizar cliente",
-            description = "Atualiza os dados de um cliente existente")
+            description = "Atualiza os dados de um cliente existente. O status só muda quando quem chama é o perfil DONA; para os demais perfis o status gravado é mantido")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Cliente atualizado com sucesso",
                     content = @Content(mediaType = "application/json",
@@ -87,7 +87,8 @@ public interface ClienteControllerOpenApi {
             Integer id,
             @RequestBody(description = "Novos dados do cliente", required = true,
                     content = @Content(schema = @Schema(implementation = ClienteRequestDTO.class)))
-            ClienteRequestDTO request);
+            ClienteRequestDTO request,
+            @Parameter(hidden = true) Authentication authentication);
 
     @Operation(summary = "Inativar cliente",
             description = "Marca o cliente como INATIVO sem apagar o registro, para manter o histórico de pedidos. Somente o perfil DONA")

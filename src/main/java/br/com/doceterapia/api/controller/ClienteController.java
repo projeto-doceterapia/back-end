@@ -54,8 +54,10 @@ public class ClienteController implements ClienteControllerOpenApi {
     @Override
     public ResponseEntity<ClienteResponseDTO> atualizarCliente(
             @PathVariable Integer id,
-            @Valid @org.springframework.web.bind.annotation.RequestBody ClienteRequestDTO request) {
-        ClienteResponseDTO response = ClienteMapper.toClienteResponse(service.atualizar(id, request));
+            @Valid @org.springframework.web.bind.annotation.RequestBody ClienteRequestDTO request,
+            Authentication authentication) {
+        ClienteResponseDTO response = ClienteMapper.toClienteResponse(
+                service.atualizar(id, request, ehDona(authentication)));
         return ResponseEntity.ok(response);
     }
 

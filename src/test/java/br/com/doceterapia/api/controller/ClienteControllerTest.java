@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -155,6 +156,23 @@ class ClienteControllerTest {
                         .content(CORPO_BASE.formatted("\"cep\": null,")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.cep").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("Atualizar informa ao serviço se quem chama é a dona")
+    void atualizarRepassaPerfil() throws Exception {
+        when(service.atualizar(eq(3), any(), eq(true))).thenReturn(cliente(null));
+        when(service.atualizar(eq(3), any(), eq(false))).thenReturn(cliente(null));
+
+        mockMvc.perform(put("/clientes/3").principal(usuario("DONA")).contentType(MediaType.APPLICATION_JSON)
+                        .content(CORPO_BASE.formatted("")))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/clientes/3").principal(usuario("FUNCIONARIA")).contentType(MediaType.APPLICATION_JSON)
+                        .content(CORPO_BASE.formatted("")))
+                .andExpect(status().isOk());
+
+        verify(service).atualizar(eq(3), any(), eq(true));
+        verify(service).atualizar(eq(3), any(), eq(false));
     }
 
     @Test
