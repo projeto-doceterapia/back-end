@@ -269,8 +269,9 @@ as demais rotas seguem a seção [Autenticação](#autenticação).
 | Usuários / Autenticação | `/usuarios` | `POST` cadastro (só `DONA`, exige `perfil`; e-mail repetido devolve 409), `POST /login`, `POST /logout` (sempre 204, com ou sem sessão), `GET /me` usuário logado com `perfil`, `GET` lista com `perfil` (só `DONA`) |
 | Clientes | `/clientes` | CRUD; `DELETE` só inativa (`status` vira `INATIVO`); `GET ?busca=` filtra por nome ou telefone; `GET /clientes/resumo` traz pedidos, gasto e último pedido por cliente; `cep` opcional com 8 dígitos |
 | Categorias de produto | `/categorias-produto` | CRUD |
-| Produtos | `/produtos` | CRUD |
-| Insumos de produto | `/produtos/{produtoId}/insumos` | CRUD |
+| Produtos | `/produtos` | CRUD, `GET /{id}`; custo e preço sugerido calculados (ver [Precificação](#precificação)) |
+| Insumos de produto (ficha técnica) | `/produtos/{produtoId}/insumos` | CRUD; unidade incompatível com a do insumo devolve 422; `PUT` e `DELETE` de item de outro produto devolvem 404 |
+| Configuração de precificação | `/configuracao-precificacao` | `GET`, `PUT` (só `DONA`) |
 | Categorias de insumo | `/categorias-insumo` | CRUD |
 | Insumos | `/insumos` | CRUD, `GET /catalogo`, `POST /obter-ou-criar` |
 | Pedidos | `/pedidos` | CRUD + transição de status |
@@ -283,6 +284,25 @@ as demais rotas seguem a seção [Autenticação](#autenticação).
 | Farol da agenda | `/configuracao-farol` | `POST`, `GET`, `PUT` |
 | Notificações | `/notificacoes` | CRUD, `PATCH /{id}/marcar-lida`, `GET /nao-lidas`, `GET /stream` (SSE), `GET /agenda`, `POST /{id}/confirmacao-envio`, `POST /teste` (notificação de teste, com intervalo mínimo) |
 | Configuração de notificações | `/configuracao-notificacao` | `GET`, `PUT` |
+
+## Precificação
+
+O custo e o preço sugerido de cada produto são calculados a cada leitura, pela ficha técnica
+(`/produtos/{produtoId}/insumos`, que descreve **uma unidade vendida**). Nada disso é gravado no produto.
+
+1. Custo dos insumos: soma de `quantidade da ficha convertida para a unidade do insumo × custoUnitario`
+   do insumo (último preço de compra).
+2. `custoEstimado` = custo dos insumos × (1 + `percentualIndiretos` / 100), arredondado ao centavo (`HALF_UP`).
+3. `precoSugerido` = `custoEstimado` × (1 + margem / 100), arredondado **para cima** ao próximo múltiplo de R$ 0,50.
+   A margem é a `margemLucro` do produto (percentual sobre o custo) quando preenchida; senão, a `margemPadrao`.
+
+`margemPadrao` (0 a 999,99) e `percentualIndiretos` (0 a 100) ficam na linha única de
+`/configuracao-precificacao`; sem linha gravada, o `GET` devolve `0.00` nos dois e o primeiro `PUT` cria a linha.
+
+Com ficha vazia, insumo sem `custoUnitario` ou item com unidade incompatível, `custoEstimado` e `precoSugerido`
+vêm `null`. `custoEstimado` e `precoSugerido` enviados no corpo de `POST` e `PUT /produtos` são ignorados.
+`precoAbaixoDoSugerido` é `true` quando `precoAtual` e `precoSugerido` existem e o atual é menor.
+O item de pedido novo grava o custo calculado no momento; itens antigos não mudam.
 
 ## Notificações
 

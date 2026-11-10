@@ -68,7 +68,8 @@ public class ItemPedidoService {
 
         BigDecimal valorTotal = request.getValorUnitario().multiply(request.getQuantidade());
         entity.setValorTotal(valorTotal);
-        entity.setMargemLucroItem(valorTotal.subtract(entity.getCustoEstimadoItem()));
+        BigDecimal custoEstimadoItem = entity.getCustoEstimadoItem();
+        entity.setMargemLucroItem(custoEstimadoItem == null ? null : valorTotal.subtract(custoEstimadoItem));
 
         repository.save(entity);
         return entity;
