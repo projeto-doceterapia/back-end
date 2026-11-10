@@ -279,12 +279,22 @@ as demais rotas seguem a seção [Autenticação](#autenticação).
 | Pagamentos | `/pagamentos` | `GET`, `GET /{id}`, `GET /pedido/{pedidoId}`, `PUT /{id}` |
 | Cancelamentos | `/cancelamentos` | `POST /pedido/{pedidoId}`, consultas |
 | Produção | `/producoes` | CRUD + transição de status |
-| Estoque | `/estoque/movimentos` | `POST` entrada de compra, `GET` histórico |
+| Estoque | `/estoque/movimentos` | `POST` entrada de compra, `GET?de&ate&insumoId` movimentações do período (`de` e `ate` obrigatórios em `yyyy-MM-dd`, no máximo 366 dias; `insumoId` opcional) |
+| Indicadores | `/indicadores` | `GET /operacionais?de&ate` (os dois perfis) e `GET /financeiros?de&ate` (só `DONA`): números agregados no banco, pela data de entrega |
 | Notas fiscais | `/notas-fiscais/{chave}/status` | `GET` status |
 | Farol da agenda | `/configuracao-farol` | `POST`, `GET`, `PUT` |
 | Notificações | `/notificacoes` | CRUD, `PATCH /{id}/marcar-lida`, `GET /nao-lidas`, `GET /stream` (SSE), `GET /agenda`, `POST /{id}/confirmacao-envio`, `POST /teste` (notificação de teste, com intervalo mínimo) |
 | Configuração de notificações | `/configuracao-notificacao` | `GET`, `PUT` |
 
+### Indicadores
+
+`GET /indicadores/operacionais` e `GET /indicadores/financeiros` recebem `de` e `ate` (`yyyy-MM-dd`, obrigatórios,
+no máximo 366 dias entre eles; fora disso a resposta é 400 em PT-BR). O período vale para a data de entrega
+dos pedidos. Pedidos cancelados e em orçamento ficam fora do faturamento: os cancelados aparecem em `cancelados`
+(pago, devolvido e retido) e os orçamentos em `emOrcamento`. Os gastos com insumos somam quantidade vezes custo
+unitário das entradas de compra lançadas no período, então podem diferir da nota por arredondamento, e o lucro
+estimado é o faturamento menos esses gastos. A `margem` é o lucro estimado em porcentagem do faturamento (0,00 sem faturamento),
+e `faturamentoPorMes` traz, para cada um dos 6 meses, `total`, `gastos` (compras do mês) e `lucro`. Os insumos abaixo do mínimo refletem o saldo atual, não o do período.
 ## Precificação
 
 O custo e o preço sugerido de cada produto são calculados a cada leitura, pela ficha técnica

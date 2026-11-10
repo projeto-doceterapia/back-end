@@ -14,6 +14,7 @@ import br.com.doceterapia.api.exception.MovimentacaoInvalidaException;
 import br.com.doceterapia.api.mapper.MovimentacaoEstoqueMapper;
 import br.com.doceterapia.api.service.MovimentacaoEstoqueService;
 import br.com.doceterapia.api.service.MovimentacaoEstoqueService.ResultadoMovimentacao;
+import br.com.doceterapia.api.service.PeriodoConsulta;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,12 +28,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -150,14 +153,43 @@ class EstoqueMovimentoControllerTest {
     }
 
     @Test
-    @DisplayName("GET lista o histórico de um insumo")
-    void listaHistorico() throws Exception {
-        when(service.listarHistorico(eq(1), any(), any()))
+    @DisplayName("GET lista as movimentações de todos os insumos no período")
+    void listarPorPeriodoSemInsumo() throws Exception {
+        when(service.listarPorPeriodo(isNull(), eq(PeriodoConsulta.de(
+                LocalDate.of(2026, 10, 4), LocalDate.of(2026, 11, 3)))))
                 .thenReturn(List.of(movimentacao(new BigDecimal("10.000"))));
 
-        mockMvc.perform(get("/estoque/movimentos").param("insumoId", "1"))
+        mockMvc.perform(get("/estoque/movimentos").param("de", "2026-10-04").param("ate", "2026-11-03"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].idMovimentacao").value(1))
                 .andExpect(jsonPath("$[0].insumoId").value(1));
+    }
+
+    @Test
+    @DisplayName("GET filtra por insumo quando informado")
+    void listarPorPeriodoComInsumo() throws Exception {
+        when(service.listarPorPeriodo(eq(1), any(PeriodoConsulta.class)))
+                .thenReturn(List.of(movimentacao(new BigDecimal("10.000"))));
+
+        mockMvc.perform(get("/estoque/movimentos")
+                        .param("de", "2026-10-04").param("ate", "2026-11-03").param("insumoId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].insumoId").value(1));
+    }
+
+    @Test
+    @DisplayName("GET sem período retorna 400")
+    void listarSemPeriodoRetorna400() throws Exception {
+        mockMvc.perform(get("/estoque/movimentos").param("insumoId", "1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Informe as datas 'de' e 'ate' no formato yyyy-MM-dd."));
+    }
+
+    @Test
+    @DisplayName("GET com período acima de 366 dias retorna 400")
+    void listarPeriodoLongoRetorna400() throws Exception {
+        mockMvc.perform(get("/estoque/movimentos").param("de", "2026-01-01").param("ate", "2027-01-03"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("O período máximo por consulta é de 366 dias."));
     }
 }

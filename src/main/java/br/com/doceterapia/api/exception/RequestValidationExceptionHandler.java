@@ -1,14 +1,17 @@
 package br.com.doceterapia.api.exception;
 
 import br.com.doceterapia.api.dto.CooldownErroResponseDTO;
+import br.com.doceterapia.api.dto.ErroResponseDTO;
 import tools.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -49,6 +52,28 @@ public class RequestValidationExceptionHandler {
         return construir(HttpStatus.BAD_REQUEST, message, request);
     }
 
+    @ExceptionHandler(FiltroInvalidoException.class)
+    public ResponseEntity<ErroResponseDTO> handleFiltroInvalido(
+            FiltroInvalidoException ex, HttpServletRequest request) {
+        return erro(ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErroResponseDTO> handleParametroAusente(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        String nome = ex.getParameterName();
+        String message = "de".equals(nome) || "ate".equals(nome)
+                ? "Informe as datas 'de' e 'ate' no formato yyyy-MM-dd."
+                : "O parâmetro '" + nome + "' é obrigatório.";
+        return erro(message, request);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErroResponseDTO> handleParametroInvalido(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        return erro("Valor inválido para o parâmetro '" + ex.getName() + "': '" + ex.getValue() + "'.", request);
+    }
+
     @ExceptionHandler(ConfiguracaoNotificacaoInvalidaException.class)
     public ResponseEntity<Map<String, Object>> handleConfiguracaoInvalida(
             ConfiguracaoNotificacaoInvalidaException ex, HttpServletRequest request) {
@@ -78,6 +103,11 @@ public class RequestValidationExceptionHandler {
                 ex.getMessage(),
                 request.getRequestURI(),
                 ex.getSegundosRestantes()));
+    }
+
+    private ResponseEntity<ErroResponseDTO> erro(String message, HttpServletRequest request) {
+        return ResponseEntity.badRequest()
+                .body(ErroResponseDTO.de(HttpStatus.BAD_REQUEST, message, request.getRequestURI()));
     }
 
     private String mensagemValorEnumInvalido(InvalidFormatException invalid) {

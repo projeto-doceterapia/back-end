@@ -112,12 +112,11 @@ public class MovimentacaoEstoqueService {
     }
 
     /**
-     * Movement history of a supply, newest first, optionally filtered by an
-     * occurrence date range.
+     * Movements in the period, newest first, optionally restricted to one supply.
      */
     @Transactional(readOnly = true)
-    public java.util.List<MovimentacaoEstoque> listarHistorico(Integer insumoId, LocalDateTime de, LocalDateTime ate) {
-        return repository.buscarHistorico(insumoId, de, ate);
+    public java.util.List<MovimentacaoEstoque> listarPorPeriodo(Integer insumoId, PeriodoConsulta periodo) {
+        return repository.buscarPorPeriodo(insumoId, periodo.inicio(), periodo.fimExclusivo());
     }
 
     /**

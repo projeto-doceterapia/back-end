@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "Movimentações de estoque", description = "Registro e consulta do histórico de estoque")
@@ -41,15 +41,17 @@ public interface EstoqueMovimentoControllerOpenApi {
                     content = @Content(schema = @Schema(implementation = MovimentacaoEstoqueRequestDTO.class)))
             MovimentacaoEstoqueRequestDTO request);
 
-    @Operation(summary = "Listar histórico de movimentações",
-            description = "Lista as movimentações de um insumo, mais recentes primeiro, com intervalo de datas opcional.")
+    @Operation(summary = "Listar movimentações por período",
+            description = "Lista as movimentações de estoque ocorridas entre as datas informadas (inclusive), "
+                    + "mais recentes primeiro. O período máximo é de 366 dias. Sem insumoId, traz todos os insumos.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Histórico retornado",
+            @ApiResponse(responseCode = "200", description = "Movimentações retornadas",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = MovimentacaoEstoqueResponseDTO.class)))
+                            schema = @Schema(implementation = MovimentacaoEstoqueResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Período ausente, invertido, malformado ou acima de 366 dias")
     })
     ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> listarMovimentos(
-            @Parameter(description = "ID do insumo", example = "1") Integer insumoId,
-            @Parameter(description = "Início do intervalo de ocorrência") LocalDateTime de,
-            @Parameter(description = "Fim do intervalo de ocorrência") LocalDateTime ate);
+            @Parameter(description = "Primeiro dia do período (yyyy-MM-dd)", example = "2026-10-04") LocalDate de,
+            @Parameter(description = "Último dia do período (yyyy-MM-dd)", example = "2026-11-03") LocalDate ate,
+            @Parameter(description = "ID do insumo; omita para listar todos", example = "1") Integer insumoId);
 }
