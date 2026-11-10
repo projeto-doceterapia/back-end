@@ -21,20 +21,12 @@ public class ProdutoRequestDTO {
     @Schema(description = "Nome do produto", example = "Bolo de Chocolate", maxLength = 45)
     private String nome;
 
-    @PositiveOrZero(message = "Custo estimado deve ser maior ou igual a zero")
-    @Schema(description = "Custo estimado do produto em reais", example = "25.50")
-    private BigDecimal custoEstimado;
-
     @PositiveOrZero(message = "Preço atual deve ser maior ou igual a zero")
     @Schema(description = "Preço atual do produto em reais", example = "89.90")
     private BigDecimal precoAtual;
 
-    @PositiveOrZero(message = "Preço sugerido deve ser maior ou igual a zero")
-    @Schema(description = "Preço sugerido do produto em reais", example = "99.90")
-    private BigDecimal precoSugerido;
-
     @PositiveOrZero(message = "Margem de lucro deve ser maior ou igual a zero")
-    @Schema(description = "Margem de lucro do produto em reais", example = "64.40")
+    @Schema(description = "Margem de lucro do produto em percentual sobre o custo; quando omitida, vale a margem padrão da configuração de precificação", example = "60.00")
     private BigDecimal margemLucro;
 
     @Schema(description = "Unidade de produção do produto", example = "UNIDADE")
@@ -66,28 +58,12 @@ public class ProdutoRequestDTO {
         this.nome = nome;
     }
 
-    public BigDecimal getCustoEstimado() {
-        return custoEstimado;
-    }
-
-    public void setCustoEstimado(BigDecimal custoEstimado) {
-        this.custoEstimado = custoEstimado;
-    }
-
     public BigDecimal getPrecoAtual() {
         return precoAtual;
     }
 
     public void setPrecoAtual(BigDecimal precoAtual) {
         this.precoAtual = precoAtual;
-    }
-
-    public BigDecimal getPrecoSugerido() {
-        return precoSugerido;
-    }
-
-    public void setPrecoSugerido(BigDecimal precoSugerido) {
-        this.precoSugerido = precoSugerido;
     }
 
     public BigDecimal getMargemLucro() {

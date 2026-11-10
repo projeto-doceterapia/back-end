@@ -20,16 +20,16 @@ public class ProdutoResponseDTO {
     @Schema(description = "Nome do produto", example = "Bolo de Chocolate")
     private String nome;
 
-    @Schema(description = "Custo estimado do produto em reais", example = "25.50")
+    @Schema(description = "Custo estimado calculado pela ficha técnica mais custos indiretos; nulo quando a ficha não permite calcular", example = "25.50")
     private BigDecimal custoEstimado;
 
     @Schema(description = "Preço atual do produto em reais", example = "89.90")
     private BigDecimal precoAtual;
 
-    @Schema(description = "Preço sugerido do produto em reais", example = "99.90")
+    @Schema(description = "Preço sugerido calculado, arredondado para cima ao próximo múltiplo de R$ 0,50; nulo quando o custo é indisponível", example = "99.90")
     private BigDecimal precoSugerido;
 
-    @Schema(description = "Margem de lucro do produto em reais", example = "64.40")
+    @Schema(description = "Margem de lucro do produto em percentual sobre o custo; nula quando vale a margem padrão", example = "60.00")
     private BigDecimal margemLucro;
 
     @Schema(description = "Unidade de produção do produto", example = "UNIDADE")
@@ -43,6 +43,9 @@ public class ProdutoResponseDTO {
 
     @Schema(description = "Descrição do produto", example = "Bolo de chocolate com recheio de brigadeiro")
     private String descricao;
+
+    @Schema(description = "Indica que o preço atual está abaixo do preço sugerido; falso quando faltar algum dos dois", example = "true")
+    private boolean precoAbaixoDoSugerido;
 
     public Integer getIdProduto() {
         return idProduto;
@@ -138,5 +141,13 @@ public class ProdutoResponseDTO {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
+    }
+
+    public boolean isPrecoAbaixoDoSugerido() {
+        return precoAbaixoDoSugerido;
+    }
+
+    public void setPrecoAbaixoDoSugerido(boolean precoAbaixoDoSugerido) {
+        this.precoAbaixoDoSugerido = precoAbaixoDoSugerido;
     }
 }

@@ -46,7 +46,7 @@ public class ProdutoInsumoController implements ProdutoInsumoControllerOpenApi {
             @PathVariable Integer produtoId,
             @PathVariable Integer id,
             @Valid @org.springframework.web.bind.annotation.RequestBody ProdutoInsumoRequestDTO request) {
-        ProdutoInsumoResponseDTO response = mapper.toResponseDTO(service.atualizar(id, request));
+        ProdutoInsumoResponseDTO response = mapper.toResponseDTO(service.atualizar(produtoId, id, request));
         return ResponseEntity.ok(response);
     }
 
@@ -55,7 +55,7 @@ public class ProdutoInsumoController implements ProdutoInsumoControllerOpenApi {
     public ResponseEntity<Void> deletarInsumoDoProduto(
             @PathVariable Integer produtoId,
             @PathVariable Integer id) {
-        service.deletar(id);
+        service.deletar(produtoId, id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -17,7 +17,7 @@ import java.util.List;
 @Tag(name = "Produtos", description = "Endpoints para gerenciamento de produtos")
 public interface ProdutoControllerOpenApi {
 
-    @Operation(summary = "Listar todos os produtos", description = "Retorna uma lista com todos os produtos cadastrados no sistema")
+    @Operation(summary = "Listar todos os produtos", description = "Retorna todos os produtos cadastrados, com custo estimado e preço sugerido calculados pela ficha técnica a cada leitura")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Produtos listados com sucesso",
                     content = @Content(mediaType = "application/json",
@@ -25,6 +25,19 @@ public interface ProdutoControllerOpenApi {
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     ResponseEntity<List<ProdutoResponseDTO>> listarProdutos();
+
+    @Operation(summary = "Buscar produto por ID",
+            description = "Retorna um produto com custo estimado e preço sugerido calculados pela ficha técnica")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Produto encontrado",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ProdutoResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Produto com ID fornecido não encontrado"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    ResponseEntity<ProdutoResponseDTO> buscarProduto(
+            @Parameter(description = "ID do produto", example = "1")
+            Integer id);
 
     @Operation(summary = "Cadastrar novo produto",
             description = "Cria um novo produto no sistema com os dados fornecidos")
@@ -45,7 +58,7 @@ public interface ProdutoControllerOpenApi {
             ProdutoRequestDTO request);
 
     @Operation(summary = "Atualizar produto",
-            description = "Atualiza os dados de um produto existente")
+            description = "Atualiza os dados de um produto existente. Custo estimado e preço sugerido não são editáveis: o corpo que os enviar é aceito e eles são ignorados.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Produto atualizado com sucesso",
                     content = @Content(mediaType = "application/json",

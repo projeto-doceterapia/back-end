@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.com.doceterapia.api.dto.ProdutoRequestDTO;
+import br.com.doceterapia.api.dto.ProdutoResponseDTO;
 import br.com.doceterapia.api.entity.CategoriaProduto;
 import br.com.doceterapia.api.entity.Produto;
 import br.com.doceterapia.api.enums.StatusAtivo;
@@ -18,9 +19,13 @@ import br.com.doceterapia.api.exception.ProdutoIdDontExistsException;
 import br.com.doceterapia.api.mapper.ProdutoMapper;
 import br.com.doceterapia.api.repository.CategoriaProdutoRepository;
 import br.com.doceterapia.api.repository.ProdutoRepository;
+import br.com.doceterapia.api.service.precificacao.PrecificacaoProduto;
+import br.com.doceterapia.api.service.precificacao.PrecificacaoService;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +44,9 @@ class ProdutoServiceTest {
     @Mock
     private ProdutoMapper produtoMapper;
 
+    @Mock
+    private PrecificacaoService precificacaoService;
+
     @InjectMocks
     private ProdutoService produtoService;
 
@@ -55,9 +63,7 @@ class ProdutoServiceTest {
         produto.setIdProduto(1);
         produto.setCategoriaProduto(categoriaProduto);
         produto.setNome("Bolo de Chocolate");
-        produto.setCustoEstimado(BigDecimal.valueOf(25.50));
         produto.setPrecoAtual(BigDecimal.valueOf(89.90));
-        produto.setPrecoSugerido(BigDecimal.valueOf(99.90));
         produto.setMargemLucro(BigDecimal.valueOf(64.40));
         produto.setUnidadeProducao(UnidadeMedida.UNIDADE);
         produto.setStatus(StatusAtivo.ATIVO);
@@ -66,9 +72,7 @@ class ProdutoServiceTest {
         produtoRequestDTO = new ProdutoRequestDTO();
         produtoRequestDTO.setFkCategoriaProduto(1);
         produtoRequestDTO.setNome("Bolo de Chocolate");
-        produtoRequestDTO.setCustoEstimado(BigDecimal.valueOf(25.50));
         produtoRequestDTO.setPrecoAtual(BigDecimal.valueOf(89.90));
-        produtoRequestDTO.setPrecoSugerido(BigDecimal.valueOf(99.90));
         produtoRequestDTO.setMargemLucro(BigDecimal.valueOf(64.40));
         produtoRequestDTO.setUnidadeProducao(UnidadeMedida.UNIDADE);
         produtoRequestDTO.setStatus(StatusAtivo.ATIVO);
@@ -76,26 +80,48 @@ class ProdutoServiceTest {
     }
 
     @Test
-    @DisplayName("Deve listar todos os produtos")
+    @DisplayName("Deve listar todos os produtos com preço calculado")
     void testListarTodos() {
         // Arrange
         Produto produto2 = new Produto();
         produto2.setIdProduto(2);
-        produto2.setCategoriaProduto(categoriaProduto);
         produto2.setNome("Torta de Morango");
-        produto2.setStatus(StatusAtivo.ATIVO);
+        List<Produto> produtos = List.of(produto, produto2);
+        PrecificacaoProduto precificacao1 = new PrecificacaoProduto(new BigDecimal("5.21"), new BigDecimal("10.50"), null);
+        PrecificacaoProduto precificacao2 = PrecificacaoProduto.indisponivel(null);
+        ProdutoResponseDTO dto1 = new ProdutoResponseDTO();
+        ProdutoResponseDTO dto2 = new ProdutoResponseDTO();
 
-        when(produtoRepository.findAll()).thenReturn(List.of(produto, produto2));
+        when(produtoRepository.findAll()).thenReturn(produtos);
+        when(precificacaoService.calcular(produtos)).thenReturn(Map.of(1, precificacao1, 2, precificacao2));
+        when(produtoMapper.toResponseDTO(produto, precificacao1)).thenReturn(dto1);
+        when(produtoMapper.toResponseDTO(produto2, precificacao2)).thenReturn(dto2);
 
         // Act
-        List<Produto> resultado = produtoService.listarTodos();
+        List<ProdutoResponseDTO> resultado = produtoService.listarTodos();
 
         // Assert
-        assertNotNull(resultado);
-        assertEquals(2, resultado.size());
-        assertEquals("Bolo de Chocolate", resultado.get(0).getNome());
-        assertEquals("Torta de Morango", resultado.get(1).getNome());
-        verify(produtoRepository).findAll();
+        assertEquals(List.of(dto1, dto2), resultado);
+    }
+
+    @Test
+    @DisplayName("Deve carregar as fichas de todos os produtos numa única consulta")
+    void listarCarregaFichasNumaConsulta() {
+        // Arrange
+        Produto produto2 = new Produto();
+        produto2.setIdProduto(2);
+        Produto produto3 = new Produto();
+        produto3.setIdProduto(3);
+        List<Produto> produtos = List.of(produto, produto2, produto3);
+        when(produtoRepository.findAll()).thenReturn(produtos);
+        when(precificacaoService.calcular(produtos)).thenReturn(Map.of());
+
+        // Act
+        produtoService.listarTodos();
+
+        // Assert
+        verify(precificacaoService, times(1)).calcular(produtos);
+        verify(precificacaoService, never()).calcular(any(Produto.class));
     }
 
     @Test
@@ -105,12 +131,35 @@ class ProdutoServiceTest {
         when(produtoRepository.findAll()).thenReturn(List.of());
 
         // Act
-        List<Produto> resultado = produtoService.listarTodos();
+        List<ProdutoResponseDTO> resultado = produtoService.listarTodos();
 
         // Assert
-        assertNotNull(resultado);
         assertTrue(resultado.isEmpty());
         verify(produtoRepository).findAll();
+    }
+
+    @Test
+    @DisplayName("Deve buscar produto por id com preço calculado")
+    void buscarPorId() {
+        // Arrange
+        PrecificacaoProduto precificacao = new PrecificacaoProduto(new BigDecimal("5.21"), new BigDecimal("10.50"), null);
+        ProdutoResponseDTO dto = new ProdutoResponseDTO();
+        when(produtoRepository.findById(1)).thenReturn(Optional.of(produto));
+        when(precificacaoService.calcular(produto)).thenReturn(precificacao);
+        when(produtoMapper.toResponseDTO(produto, precificacao)).thenReturn(dto);
+
+        // Act & Assert
+        assertSame(dto, produtoService.buscarPorId(1));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao buscar produto inexistente")
+    void buscarPorIdInexistente() {
+        // Arrange
+        when(produtoRepository.findById(999)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ProdutoIdDontExistsException.class, () -> produtoService.buscarPorId(999));
     }
 
     @Test
@@ -120,16 +169,15 @@ class ProdutoServiceTest {
         when(categoriaProdutoRepository.existsById(produtoRequestDTO.getFkCategoriaProduto())).thenReturn(true);
         when(produtoMapper.toEntity(produtoRequestDTO)).thenReturn(produto);
         when(produtoRepository.save(any(Produto.class))).thenReturn(produto);
+        ProdutoResponseDTO dto = new ProdutoResponseDTO();
+        when(produtoMapper.toResponseDTO(any(Produto.class), any())).thenReturn(dto);
 
         // Act
-        Produto resultado = produtoService.cadastrar(produtoRequestDTO);
+        ProdutoResponseDTO resultado = produtoService.cadastrar(produtoRequestDTO);
 
         // Assert
-        assertNotNull(resultado);
-        assertEquals("Bolo de Chocolate", resultado.getNome());
-        assertEquals(1, resultado.getCategoriaProduto().getIdCategoriaProduto());
-        assertEquals(BigDecimal.valueOf(89.90), resultado.getPrecoAtual());
-        assertEquals(StatusAtivo.ATIVO, resultado.getStatus());
+        assertSame(dto, resultado);
+        verify(precificacaoService).calcular(produto);
         verify(categoriaProdutoRepository).existsById(produtoRequestDTO.getFkCategoriaProduto());
         verify(produtoRepository).save(any(Produto.class));
     }
@@ -158,13 +206,15 @@ class ProdutoServiceTest {
         when(categoriaProdutoRepository.existsById(produtoRequestDTO.getFkCategoriaProduto())).thenReturn(true);
         when(produtoMapper.toEntity(produtoRequestDTO)).thenReturn(produto);
         when(produtoRepository.save(any(Produto.class))).thenReturn(produto);
+        ProdutoResponseDTO dto = new ProdutoResponseDTO();
+        when(produtoMapper.toResponseDTO(any(Produto.class), any())).thenReturn(dto);
 
         // Act
-        Produto resultado = produtoService.atualizar(idProduto, produtoRequestDTO);
+        ProdutoResponseDTO resultado = produtoService.atualizar(idProduto, produtoRequestDTO);
 
         // Assert
-        assertNotNull(resultado);
-        assertEquals(idProduto, resultado.getIdProduto());
+        assertSame(dto, resultado);
+        assertEquals(idProduto, produto.getIdProduto());
         verify(produtoRepository).existsById(idProduto);
         verify(categoriaProdutoRepository).existsById(produtoRequestDTO.getFkCategoriaProduto());
         verify(produtoRepository).save(any(Produto.class));

@@ -27,13 +27,7 @@ public class Produto {
     private String nome;
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal custoEstimado;
-
-    @Column(precision = 10, scale = 2)
     private BigDecimal precoAtual;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal precoSugerido;
 
     @Column(precision = 10, scale = 2)
     private BigDecimal margemLucro;
@@ -74,28 +68,12 @@ public class Produto {
         this.nome = nome;
     }
 
-    public BigDecimal getCustoEstimado() {
-        return custoEstimado;
-    }
-
-    public void setCustoEstimado(BigDecimal custoEstimado) {
-        this.custoEstimado = custoEstimado;
-    }
-
     public BigDecimal getPrecoAtual() {
         return precoAtual;
     }
 
     public void setPrecoAtual(BigDecimal precoAtual) {
         this.precoAtual = precoAtual;
-    }
-
-    public BigDecimal getPrecoSugerido() {
-        return precoSugerido;
-    }
-
-    public void setPrecoSugerido(BigDecimal precoSugerido) {
-        this.precoSugerido = precoSugerido;
     }
 
     public BigDecimal getMargemLucro() {

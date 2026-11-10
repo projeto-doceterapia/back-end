@@ -80,6 +80,12 @@ public class RequestValidationExceptionHandler {
         return construir(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(UnidadeIncompativelException.class)
+    public ResponseEntity<Map<String, Object>> handleUnidadeIncompativel(
+            UnidadeIncompativelException ex, HttpServletRequest request) {
+        return construir(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(UsuarioEmailAlreadyExistsException.class)
     public ResponseEntity<Map<String, Object>> handleUsuarioEmailDuplicado(
             UsuarioEmailAlreadyExistsException ex, HttpServletRequest request) {

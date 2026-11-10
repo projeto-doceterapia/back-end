@@ -6,7 +6,9 @@ import br.com.doceterapia.api.entity.Insumo;
 import br.com.doceterapia.api.entity.ProdutoInsumo;
 import br.com.doceterapia.api.exception.InsumoIdDontExistsException;
 import br.com.doceterapia.api.exception.ProdutoIdDontExistsException;
+import br.com.doceterapia.api.exception.ProdutoInsumoIdDontExistsException;
 import br.com.doceterapia.api.exception.ProdutoInsumoDuplicateException;
+import br.com.doceterapia.api.exception.UnidadeIncompativelException;
 import br.com.doceterapia.api.mapper.ProdutoInsumoMapper;
 import br.com.doceterapia.api.repository.InsumoRepository;
 import br.com.doceterapia.api.repository.ProdutoInsumoRepository;
@@ -21,13 +23,16 @@ public class ProdutoInsumoService {
     private final ProdutoInsumoMapper mapper;
     private final ProdutoRepository produtoRepository;
     private final InsumoRepository insumoRepository;
+    private final ConversaoUnidadeService conversaoUnidadeService;
 
     public ProdutoInsumoService(ProdutoInsumoRepository repository, ProdutoInsumoMapper mapper,
-                                ProdutoRepository produtoRepository, InsumoRepository insumoRepository) {
+                                ProdutoRepository produtoRepository, InsumoRepository insumoRepository,
+                                ConversaoUnidadeService conversaoUnidadeService) {
         this.repository = repository;
         this.mapper = mapper;
         this.produtoRepository = produtoRepository;
         this.insumoRepository = insumoRepository;
+        this.conversaoUnidadeService = conversaoUnidadeService;
     }
 
     public List<ProdutoInsumo> listarPorProduto(Integer produtoId) {
@@ -41,9 +46,9 @@ public class ProdutoInsumoService {
         if (!produtoRepository.existsById(produtoId)) {
             throw new ProdutoIdDontExistsException();
         }
-        if (!insumoRepository.existsById(dto.getFkInsumo())) {
-            throw new InsumoIdDontExistsException();
-        }
+        Insumo insumo = insumoRepository.findById(dto.getFkInsumo())
+                .orElseThrow(InsumoIdDontExistsException::new);
+        validarUnidade(dto, insumo);
         if (repository.existsByProdutoIdProdutoAndInsumoIdInsumo(produtoId, dto.getFkInsumo())) {
             throw new ProdutoInsumoDuplicateException();
         }
@@ -53,26 +58,22 @@ public class ProdutoInsumoService {
         return entity;
     }
 
-    public ProdutoInsumo atualizar(Integer id, ProdutoInsumoRequestDTO dto) {
-        ProdutoInsumo entity = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("ProdutoInsumo não encontrado: " + id));
+    public ProdutoInsumo atualizar(Integer produtoId, Integer id, ProdutoInsumoRequestDTO dto) {
+        ProdutoInsumo entity = buscarDoProduto(produtoId, id);
 
-        if (!insumoRepository.existsById(dto.getFkInsumo())) {
-            throw new InsumoIdDontExistsException();
-        }
+        Insumo novoInsumo = insumoRepository.findById(dto.getFkInsumo())
+                .orElseThrow(InsumoIdDontExistsException::new);
+        validarUnidade(dto, novoInsumo);
 
         boolean mesmoInsumo = entity.getInsumo().getIdInsumo().equals(dto.getFkInsumo());
         if (!mesmoInsumo) {
-            boolean duplicado = repository.findByProdutoIdProduto(entity.getProduto().getIdProduto())
+            boolean duplicado = repository.findByProdutoIdProduto(produtoId)
                     .stream()
                     .anyMatch(pi -> !pi.getIdProdutoInsumo().equals(id)
                             && pi.getInsumo().getIdInsumo().equals(dto.getFkInsumo()));
             if (duplicado) {
                 throw new ProdutoInsumoDuplicateException();
             }
-
-            Insumo novoInsumo = insumoRepository.findById(dto.getFkInsumo())
-                    .orElseThrow(InsumoIdDontExistsException::new);
             entity.setInsumo(novoInsumo);
         }
 
@@ -82,10 +83,19 @@ public class ProdutoInsumoService {
         return entity;
     }
 
-    public void deletar(Integer id) {
-        if (!repository.existsById(id)) {
-            throw new RuntimeException("ProdutoInsumo não encontrado: " + id);
+    public void deletar(Integer produtoId, Integer id) {
+        repository.delete(buscarDoProduto(produtoId, id));
+    }
+
+    private ProdutoInsumo buscarDoProduto(Integer produtoId, Integer id) {
+        return repository.findById(id)
+                .filter(linha -> linha.getProduto().getIdProduto().equals(produtoId))
+                .orElseThrow(ProdutoInsumoIdDontExistsException::new);
+    }
+
+    private void validarUnidade(ProdutoInsumoRequestDTO dto, Insumo insumo) {
+        if (!conversaoUnidadeService.saoCompativeis(dto.getUnidade(), insumo.getUnidade())) {
+            throw new UnidadeIncompativelException(dto.getUnidade(), insumo.getUnidade());
         }
-        repository.deleteById(id);
     }
 }
