@@ -24,6 +24,7 @@ public class PedidoMapper {
         pedido.setStatusPedido(dto.getStatusPedido());
         pedido.setFormaEntrega(dto.getFormaEntrega());
         pedido.setEnderecoEntrega(dto.getEnderecoEntrega());
+        pedido.setCep(dto.getCep());
         pedido.setDataEntrega(dto.getDataEntrega());
         pedido.setAnotacao(dto.getAnotacao());
         return pedido;
@@ -38,6 +39,7 @@ public class PedidoMapper {
         response.setStatusPedido(pedido.getStatusPedido());
         response.setFormaEntrega(pedido.getFormaEntrega());
         response.setEnderecoEntrega(pedido.getEnderecoEntrega());
+        response.setCep(pedido.getCep());
         response.setDataEntrega(pedido.getDataEntrega());
         response.setAnotacao(pedido.getAnotacao());
         response.setDataCriacao(pedido.getDataCriacao());

@@ -16,6 +16,8 @@ public class ClienteResponseDTO {
     private String telefone;
     @Schema(description = "Endereço do cliente", example = "Rua das Flores, 123")
     private String endereco;
+    @Schema(description = "CEP do cliente, 8 dígitos", example = "01001000", nullable = true)
+    private String cep;
     @Schema(description = "Tipo de pessoa", example = "FISICA")
     private TipoPessoa tipoPessoa;
     @Schema(description = "Classificação do cliente", example = "PADRAO")
@@ -87,5 +89,13 @@ public class ClienteResponseDTO {
 
     public void setObservacao(String observacao) {
         this.observacao = observacao;
+    }
+
+    public String getCep() {
+        return cep;
+    }
+
+    public void setCep(String cep) {
+        this.cep = cep;
     }
 }

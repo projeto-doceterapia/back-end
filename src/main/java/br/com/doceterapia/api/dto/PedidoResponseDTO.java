@@ -32,6 +32,9 @@ public class PedidoResponseDTO {
     @Schema(description = "Endereço de entrega do pedido", example = "Rua das Flores, 123")
     private String enderecoEntrega;
 
+    @Schema(description = "CEP de entrega do pedido, 8 dígitos", example = "01001000", nullable = true)
+    private String cep;
+
     @Schema(description = "Data de entrega do pedido", example = "2026-04-15", type = "string", format = "date")
     private LocalDate dataEntrega;
 
@@ -130,5 +133,13 @@ public class PedidoResponseDTO {
 
     public void setDataConfirmacao(LocalDateTime dataConfirmacao) {
         this.dataConfirmacao = dataConfirmacao;
+    }
+
+    public String getCep() {
+        return cep;
+    }
+
+    public void setCep(String cep) {
+        this.cep = cep;
     }
 }
