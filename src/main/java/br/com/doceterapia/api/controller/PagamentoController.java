@@ -1,17 +1,14 @@
 package br.com.doceterapia.api.controller;
 
-import br.com.doceterapia.api.dto.PagamentoRequestDTO;
 import br.com.doceterapia.api.dto.PagamentoResponseDTO;
+import br.com.doceterapia.api.dto.RegistroPagamentoRequestDTO;
 import br.com.doceterapia.api.service.PagamentoService;
 import br.com.doceterapia.api.swagger.PagamentoControllerOpenApi;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,30 +43,18 @@ public class PagamentoController implements PagamentoControllerOpenApi {
         return ResponseEntity.ok(service.buscarPorPedidoId(pedidoId));
     }
 
-    @PutMapping("/{id}")
-    @Override
-    public ResponseEntity<PagamentoResponseDTO> atualizarPagamento(
-            @PathVariable Integer id,
-            @Valid @RequestBody PagamentoRequestDTO request) {
-        return ResponseEntity.ok(service.atualizar(id, request));
-    }
-
     @PatchMapping("/{id}/registrar-sinal")
     @Override
-    public ResponseEntity<PagamentoResponseDTO> registrarSinal(@PathVariable Integer id) {
-        return ResponseEntity.ok(service.registrarSinal(id));
+    public ResponseEntity<PagamentoResponseDTO> registrarSinal(@PathVariable Integer id,
+            @Valid @RequestBody RegistroPagamentoRequestDTO request) {
+        return ResponseEntity.ok(service.registrarSinal(id, request));
     }
 
     @PatchMapping("/{id}/registrar-restante")
     @Override
-    public ResponseEntity<PagamentoResponseDTO> registrarRestante(@PathVariable Integer id) {
-        return ResponseEntity.ok(service.registrarRestante(id));
+    public ResponseEntity<PagamentoResponseDTO> registrarRestante(@PathVariable Integer id,
+            @Valid @RequestBody RegistroPagamentoRequestDTO request) {
+        return ResponseEntity.ok(service.registrarRestante(id, request));
     }
 
-    @DeleteMapping("/{id}")
-    @Override
-    public ResponseEntity<Void> deletarPagamento(@PathVariable Integer id) {
-        service.deletar(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
 }

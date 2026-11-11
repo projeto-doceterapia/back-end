@@ -18,6 +18,9 @@ public interface ItemPedidoRepository extends JpaRepository<ItemPedido, Integer>
 
     List<ItemPedido> findByPedidoIdPedido(Integer pedidoId);
 
+    @Query("SELECT i.pedido.idPedido FROM ItemPedido i WHERE i.idProdutoPedido = :id")
+    java.util.Optional<Integer> buscarPedidoId(@Param("id") Integer id);
+
     @Query("SELECT new br.com.doceterapia.api.repository.projecao.TotalPorProduto("
             + "pr.idProduto, pr.nome, SUM(i.quantidade)) FROM ItemPedido i JOIN i.pedido p JOIN i.produto pr "
             + "WHERE p.dataEntrega BETWEEN :de AND :ate AND p.statusPedido IN :statuses "

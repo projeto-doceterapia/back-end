@@ -5,12 +5,15 @@ import br.com.doceterapia.api.dto.ItemPedidoResponseDTO;
 import br.com.doceterapia.api.entity.ItemPedido;
 import br.com.doceterapia.api.entity.Pedido;
 import br.com.doceterapia.api.entity.Produto;
+import br.com.doceterapia.api.exception.PedidoIdDontExistsException;
+import br.com.doceterapia.api.exception.ProdutoIdDontExistsException;
 import br.com.doceterapia.api.repository.PedidoRepository;
 import br.com.doceterapia.api.repository.ProdutoRepository;
 import br.com.doceterapia.api.service.precificacao.PrecificacaoService;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Component
 public class ItemPedidoMapper {
@@ -28,9 +31,9 @@ public class ItemPedidoMapper {
 
     public ItemPedido toEntity(ItemPedidoRequestDTO dto) {
         Produto produto = produtoRepository.findById(dto.getFkProduto())
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + dto.getFkProduto()));
+                .orElseThrow(ProdutoIdDontExistsException::new);
         Pedido pedido = pedidoRepository.findById(dto.getFkPedido())
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + dto.getFkPedido()));
+                .orElseThrow(PedidoIdDontExistsException::new);
 
         ItemPedido entity = new ItemPedido();
         entity.setProduto(produto);
@@ -42,7 +45,7 @@ public class ItemPedidoMapper {
         BigDecimal custoEstimado = precificacaoService.calcular(produto).custoEstimado();
         entity.setCustoEstimadoItem(custoEstimado);
 
-        BigDecimal valorTotal = dto.getValorUnitario().multiply(dto.getQuantidade());
+        BigDecimal valorTotal = dto.getValorUnitario().multiply(dto.getQuantidade()).setScale(2, RoundingMode.HALF_UP);
         entity.setValorTotal(valorTotal);
         entity.setMargemLucroItem(custoEstimado == null ? null : valorTotal.subtract(custoEstimado));
 

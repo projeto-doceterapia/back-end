@@ -25,7 +25,7 @@ public interface CancelamentoPedidoControllerOpenApi {
                             schema = @Schema(implementation = CancelamentoPedidoResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos"),
             @ApiResponse(responseCode = "404", description = "Pedido com ID fornecido não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Já existe um cancelamento para este pedido"),
+            @ApiResponse(responseCode = "409", description = "Já existe cancelamento ou o estado do pedido não permite cancelá-lo"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     ResponseEntity<CancelamentoPedidoResponseDTO> cadastrarCancelamento(

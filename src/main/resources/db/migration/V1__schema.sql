@@ -111,7 +111,6 @@ CREATE TABLE pagamento (
     valor_sinal DECIMAL(10,2),
     valor_restante DECIMAL(10,2),
     status_pagamento VARCHAR(20) NOT NULL,
-    forma_pagamento VARCHAR(20),
     forma_pagamento_sinal VARCHAR(30) NULL,
     forma_pagamento_restante VARCHAR(30) NULL,
     data_pagamento_sinal DATE,

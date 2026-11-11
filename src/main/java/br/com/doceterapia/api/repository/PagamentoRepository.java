@@ -18,6 +18,9 @@ public interface PagamentoRepository extends JpaRepository<Pagamento, Integer> {
 
     Optional<Pagamento> findByPedidoIdPedido(Integer pedidoId);
 
+    @Query("SELECT p.pedido.idPedido FROM Pagamento p WHERE p.idPagamento = :id")
+    Optional<Integer> buscarPedidoId(@Param("id") Integer id);
+
     // Final payments to check: delivered orders whose payment is not yet settled.
     @Query("SELECT pg FROM Pagamento pg JOIN pg.pedido p "
             + "WHERE p.statusPedido = br.com.doceterapia.api.enums.StatusPedido.ENTREGUE "
