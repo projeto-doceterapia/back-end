@@ -12,6 +12,7 @@ import br.com.doceterapia.api.dto.ItemPedidoRequestDTO;
 import br.com.doceterapia.api.entity.ItemPedido;
 import br.com.doceterapia.api.entity.Pedido;
 import br.com.doceterapia.api.entity.Produto;
+import br.com.doceterapia.api.enums.StatusPedido;
 import br.com.doceterapia.api.exception.ItemPedidoIdDontExistsException;
 import br.com.doceterapia.api.exception.ProdutoIdDontExistsException;
 import br.com.doceterapia.api.exception.PedidoIdDontExistsException;
@@ -19,6 +20,8 @@ import br.com.doceterapia.api.mapper.ItemPedidoMapper;
 import br.com.doceterapia.api.repository.ItemPedidoRepository;
 import br.com.doceterapia.api.repository.ProdutoRepository;
 import br.com.doceterapia.api.repository.PedidoRepository;
+import br.com.doceterapia.api.repository.PagamentoRepository;
+import br.com.doceterapia.api.repository.ProducaoRepository;
 import br.com.doceterapia.api.service.precificacao.PrecificacaoProduto;
 import br.com.doceterapia.api.service.precificacao.PrecificacaoService;
 
@@ -44,6 +47,18 @@ class ItemPedidoServiceTest {
     private PedidoRepository pedidoRepository;
 
     @Mock
+    private ProducaoRepository producaoRepository;
+
+    @Mock
+    private PagamentoRepository pagamentoRepository;
+
+    @Mock
+    private PagamentoService pagamentoService;
+
+    @Mock
+    private BloqueioPedidoService bloqueioPedidoService;
+
+    @Mock
     private ItemPedidoMapper itemPedidoMapper;
 
     @Mock
@@ -63,6 +78,10 @@ class ItemPedidoServiceTest {
         produto.setIdProduto(1);
         pedido = new Pedido();
         pedido.setIdPedido(1);
+        lenient().when(bloqueioPedidoService.buscar(1)).thenReturn(pedido);
+        lenient().when(itemPedidoRepository.buscarPedidoId(1)).thenReturn(Optional.of(1));
+        lenient().when(producaoRepository.findByPedidoIdPedido(1)).thenReturn(Optional.empty());
+        lenient().when(pagamentoRepository.findByPedidoIdPedido(1)).thenReturn(Optional.empty());
 
         itemPedido = new ItemPedido();
         itemPedido.setIdProdutoPedido(1);
@@ -130,7 +149,6 @@ class ItemPedidoServiceTest {
         assertEquals(BigDecimal.valueOf(45.90), resultado.getValorUnitario());
         assertEquals(BigDecimal.valueOf(91.80), resultado.getValorTotal());
         verify(produtoRepository).existsById(itemPedidoRequestDTO.getFkProduto());
-        verify(pedidoRepository).existsById(itemPedidoRequestDTO.getFkPedido());
         verify(itemPedidoRepository).save(any(ItemPedido.class));
     }
 
@@ -174,7 +192,6 @@ class ItemPedidoServiceTest {
         when(itemPedidoRepository.findById(id)).thenReturn(Optional.of(itemPedido));
         when(itemPedidoRepository.existsById(id)).thenReturn(true);
         when(produtoRepository.existsById(itemPedidoRequestDTO.getFkProduto())).thenReturn(true);
-        when(pedidoRepository.existsById(itemPedidoRequestDTO.getFkPedido())).thenReturn(true);
         when(itemPedidoRepository.save(any(ItemPedido.class))).thenReturn(itemPedido);
 
         // Act
@@ -185,7 +202,6 @@ class ItemPedidoServiceTest {
         assertEquals(id, resultado.getIdProdutoPedido());
         verify(itemPedidoRepository).existsById(id);
         verify(produtoRepository).existsById(itemPedidoRequestDTO.getFkProduto());
-        verify(pedidoRepository).existsById(itemPedidoRequestDTO.getFkPedido());
         verify(itemPedidoRepository).save(any(ItemPedido.class));
     }
 
@@ -238,7 +254,8 @@ class ItemPedidoServiceTest {
 
     private ItemPedidoService servicoComMapperReal() {
         ItemPedidoMapper mapperReal = new ItemPedidoMapper(produtoRepository, pedidoRepository, precificacaoService);
-        return new ItemPedidoService(itemPedidoRepository, mapperReal, produtoRepository, pedidoRepository);
+        return new ItemPedidoService(itemPedidoRepository, mapperReal, produtoRepository, pedidoRepository,
+                producaoRepository, pagamentoRepository, pagamentoService, bloqueioPedidoService);
     }
 
     private void prepararCadastroComCusto(BigDecimal custoCalculado) {
@@ -287,7 +304,6 @@ class ItemPedidoServiceTest {
         when(itemPedidoRepository.existsById(1)).thenReturn(true);
         when(itemPedidoRepository.findById(1)).thenReturn(Optional.of(itemPedido));
         when(produtoRepository.existsById(1)).thenReturn(true);
-        when(pedidoRepository.existsById(1)).thenReturn(true);
         when(itemPedidoRepository.save(any(ItemPedido.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
@@ -296,5 +312,17 @@ class ItemPedidoServiceTest {
         // Assert
         assertEquals(0, BigDecimal.valueOf(50.00).compareTo(resultado.getCustoEstimadoItem()));
         verifyNoInteractions(precificacaoService);
+    }
+
+    @Test
+    @DisplayName("Não deve alterar item quando o pedido aguarda entrega")
+    void naoDeveAlterarItemQuandoPedidoAguardaEntrega() {
+        pedido.setStatusPedido(StatusPedido.AGUARDANDO_ENTREGA);
+        when(itemPedidoRepository.existsById(1)).thenReturn(true);
+
+        assertThrows(br.com.doceterapia.api.exception.PedidoFinanceiramenteFechadoException.class,
+                () -> itemPedidoService.atualizar(1, itemPedidoRequestDTO));
+
+        verify(itemPedidoRepository, never()).save(any());
     }
 }
