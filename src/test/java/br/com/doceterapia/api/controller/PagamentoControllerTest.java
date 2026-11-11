@@ -74,4 +74,3 @@ class PagamentoControllerTest {
                 .andExpect(status().isMethodNotAllowed());
     }
 }
-

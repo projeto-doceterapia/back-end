@@ -62,4 +62,3 @@ class PedidoControllerTest {
                 .andExpect(jsonPath("$.path").value("/pedidos/1/status"));
     }
 }
-

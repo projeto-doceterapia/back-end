@@ -48,4 +48,3 @@ class ItemPedidoControllerTest {
                 .andExpect(jsonPath("$.path").value("/itens-pedido/31"));
     }
 }
-
