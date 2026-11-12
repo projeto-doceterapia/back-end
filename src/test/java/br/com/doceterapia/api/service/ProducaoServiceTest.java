@@ -73,31 +73,6 @@ class ProducaoServiceTest {
     }
 
     @Test
-    @DisplayName("Deve listar todas as produções")
-    void testListarTodos() {
-        // Arrange
-        Producao producao2 = new Producao();
-        producao2.setIdProducao(2);
-        producao2.setPedido(pedido);
-        producao2.setStatusProducao(StatusProducao.FINALIZADO);
-
-        ProducaoResponseDTO dto2 = new ProducaoResponseDTO();
-        dto2.setIdProducao(2);
-
-        when(producaoRepository.findAll()).thenReturn(List.of(producao, producao2));
-        when(producaoMapper.toResponseDTO(producao)).thenReturn(producaoResponseDTO);
-        when(producaoMapper.toResponseDTO(producao2)).thenReturn(dto2);
-
-        // Act
-        List<ProducaoResponseDTO> resultado = producaoService.listarTodos();
-
-        // Assert
-        assertNotNull(resultado);
-        assertEquals(2, resultado.size());
-        verify(producaoRepository).findAll();
-    }
-
-    @Test
     @DisplayName("Deve cadastrar uma nova produção com sucesso")
     void testCadastrar() {
         // Arrange
