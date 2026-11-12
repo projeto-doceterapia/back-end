@@ -11,6 +11,7 @@ import br.com.doceterapia.api.service.ItemPedidoService;
 import br.com.doceterapia.api.swagger.ItemPedidoControllerOpenApi;
 
 import java.util.List;
+import br.com.doceterapia.api.service.PedidoConsultaService;
 
 @RestController
 @RequestMapping("/itens-pedido")
@@ -18,16 +19,19 @@ public class ItemPedidoController implements ItemPedidoControllerOpenApi {
 
     private final ItemPedidoService service;
     private final ItemPedidoMapper mapper;
+    private final PedidoConsultaService consultaService;
 
-    public ItemPedidoController(ItemPedidoService service, ItemPedidoMapper mapper) {
+    public ItemPedidoController(ItemPedidoService service, ItemPedidoMapper mapper, PedidoConsultaService consultaService) {
         this.service = service;
         this.mapper = mapper;
+        this.consultaService = consultaService;
     }
 
     @GetMapping
     @Override
-    public ResponseEntity<List<ItemPedidoResponseDTO>> listarItensPedido() {
-        return ResponseEntity.ok(service.listarTodos().stream().map(mapper::toResponseDTO).toList());
+    public ResponseEntity<List<ItemPedidoResponseDTO>> listarItensPedido(
+            @RequestParam(required = false) String[] pedidoId) {
+        return ResponseEntity.ok(consultaService.listarItensComParametros(pedidoId));
     }
 
     @PostMapping

@@ -34,15 +34,18 @@ public interface CancelamentoPedidoControllerOpenApi {
                     content = @Content(schema = @Schema(implementation = CancelamentoPedidoRequestDTO.class)))
             CancelamentoPedidoRequestDTO request);
 
-    @Operation(summary = "Listar todos os cancelamentos",
-            description = "Retorna uma lista com todos os cancelamentos cadastrados")
+    @Operation(summary = "Listar cancelamentos por período",
+            description = "Retorna cancelamentos no período inclusivo informado; o fim é convertido para a meia-noite seguinte de forma exclusiva.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Cancelamentos listados com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = CancelamentoPedidoResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Período ausente ou inválido"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    ResponseEntity<List<CancelamentoPedidoResponseDTO>> listarCancelamentos();
+    ResponseEntity<List<CancelamentoPedidoResponseDTO>> listarCancelamentos(
+            @Parameter(description = "Data inicial do período", example = "2026-11-01", required = true) java.time.LocalDate de,
+            @Parameter(description = "Data final inclusiva do período", example = "2026-11-30", required = true) java.time.LocalDate ate);
 
     @Operation(summary = "Buscar cancelamento por ID",
             description = "Retorna um cancelamento pelo seu ID")

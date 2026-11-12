@@ -12,6 +12,9 @@ import br.com.doceterapia.api.service.ProducaoService;
 import br.com.doceterapia.api.swagger.ProducaoControllerOpenApi;
 
 import java.util.List;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
+import br.com.doceterapia.api.service.PedidoConsultaService;
 
 @RestController
 @RequestMapping("/producoes")
@@ -19,16 +22,21 @@ public class ProducaoController implements ProducaoControllerOpenApi {
 
     private final ProducaoService service;
     private final ProducaoMapper mapper;
+    private final PedidoConsultaService consultaService;
 
-    public ProducaoController(ProducaoService service, ProducaoMapper mapper) {
+    public ProducaoController(ProducaoService service, ProducaoMapper mapper, PedidoConsultaService consultaService) {
         this.service = service;
         this.mapper = mapper;
+        this.consultaService = consultaService;
     }
 
     @GetMapping
     @Override
-    public ResponseEntity<List<ProducaoResponseDTO>> listarProducoes() {
-        return ResponseEntity.ok(service.listarTodos());
+    public ResponseEntity<List<ProducaoResponseDTO>> listarProducoes(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate,
+            @RequestParam(required = false) String[] status) {
+        return ResponseEntity.ok(consultaService.listarProducoesComParametros(de, ate, status));
     }
 
     @GetMapping("/{id}")

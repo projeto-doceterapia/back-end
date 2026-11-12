@@ -40,10 +40,6 @@ public class ProducaoService {
         this.pedidoRepository = pedidoRepository;
     }
 
-    public List<ProducaoResponseDTO> listarTodos() {
-        return repository.findAll().stream().map(mapper::toResponseDTO).toList();
-    }
-
     public ProducaoResponseDTO cadastrar(ProducaoRequestDTO request) {
         if (!pedidoRepository.existsById(request.getPedidoId())) {
             throw new PedidoIdDontExistsException();
