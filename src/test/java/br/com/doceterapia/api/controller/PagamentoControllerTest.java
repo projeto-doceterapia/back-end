@@ -2,6 +2,7 @@ package br.com.doceterapia.api.controller;
 
 import br.com.doceterapia.api.exception.*;
 import br.com.doceterapia.api.service.PagamentoService;
+import br.com.doceterapia.api.service.PedidoConsultaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
@@ -16,7 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -32,6 +33,9 @@ class PagamentoControllerTest {
 
     @MockitoBean
     private PagamentoService service;
+
+    @MockitoBean
+    private PedidoConsultaService consultaService;
 
     @Test
     void deveResponder400SemFormaPagamento() throws Exception {
@@ -72,5 +76,17 @@ class PagamentoControllerTest {
     void naoDeveExporRemocaoDePagamento() throws Exception {
         mockMvc.perform(delete("/pagamentos/1"))
                 .andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test
+    void deveExigirPedidoIdEAceitarIdsDuplicados() throws Exception {
+        when(consultaService.listarPagamentosComParametros(any(String[].class))).thenReturn(java.util.List.of());
+        when(consultaService.listarPagamentosComParametros(isNull()))
+                .thenThrow(new FiltroInvalidoException("Informe ao menos um pedidoId."));
+
+        mockMvc.perform(get("/pagamentos")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/pagamentos").param("pedidoId", "1,1").param("pedidoId", "2"))
+                .andExpect(status().isOk());
+        verify(consultaService).listarPagamentosComParametros(new String[] {"1,1", "2"});
     }
 }

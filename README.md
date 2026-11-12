@@ -274,11 +274,11 @@ as demais rotas seguem a seção [Autenticação](#autenticação).
 | Configuração de precificação | `/configuracao-precificacao` | `GET`, `PUT` (só `DONA`) |
 | Categorias de insumo | `/categorias-insumo` | CRUD |
 | Insumos | `/insumos` | CRUD, `GET /catalogo`, `POST /obter-ou-criar` |
-| Pedidos | `/pedidos` | CRUD + transição de status |
-| Itens de pedido | `/itens-pedido` | CRUD |
-| Pagamentos | `/pagamentos` | `GET`, `GET /{id}`, `GET /pedido/{pedidoId}`, `PATCH /{id}/registrar-sinal`, `PATCH /{id}/registrar-restante` |
-| Cancelamentos | `/cancelamentos` | `POST /pedido/{pedidoId}`, consultas |
-| Produção | `/producoes` | CRUD + transição de status |
+| Pedidos | `/pedidos` | CRUD, detalhe `GET /{id}` e lista por `de`/`ate`, status e cliente |
+| Itens de pedido | `/itens-pedido` | CRUD; lista exige `pedidoId` (1 a 500) |
+| Pagamentos | `/pagamentos` | Lista exige `pedidoId` (1 a 500), `GET /{id}`, `GET /pedido/{pedidoId}`, `PATCH /{id}/registrar-sinal`, `PATCH /{id}/registrar-restante` |
+| Cancelamentos | `/cancelamentos` | `POST /pedido/{pedidoId}`; lista exige `de` e `ate` |
+| Produção | `/producoes` | CRUD + transição de status; lista exige `de` e `ate` |
 | Estoque | `/estoque/movimentos` | `POST` entrada de compra, `GET?de&ate&insumoId` movimentações do período (`de` e `ate` obrigatórios em `yyyy-MM-dd`, no máximo 366 dias; `insumoId` opcional) |
 | Indicadores | `/indicadores` | `GET /operacionais?de&ate` (os dois perfis) e `GET /financeiros?de&ate` (só `DONA`): números agregados no banco, pela data de entrega |
 | Notas fiscais | `/notas-fiscais/{chave}/status` | `GET` status |

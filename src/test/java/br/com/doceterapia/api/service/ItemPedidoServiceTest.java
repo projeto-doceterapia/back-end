@@ -102,34 +102,6 @@ class ItemPedidoServiceTest {
     }
 
     @Test
-    @DisplayName("Deve listar todos os itens de pedido")
-    void testListarTodos() {
-        // Arrange
-        Produto produto2 = new Produto();
-        produto2.setIdProduto(2);
-
-        ItemPedido itemPedido2 = new ItemPedido();
-        itemPedido2.setIdProdutoPedido(2);
-        itemPedido2.setProduto(produto2);
-        itemPedido2.setPedido(pedido);
-        itemPedido2.setQuantidade(BigDecimal.valueOf(1));
-        itemPedido2.setValorUnitario(BigDecimal.valueOf(30.00));
-        itemPedido2.setValorTotal(BigDecimal.valueOf(30.00));
-
-        when(itemPedidoRepository.findAll()).thenReturn(List.of(itemPedido, itemPedido2));
-
-        // Act
-        List<ItemPedido> resultado = itemPedidoService.listarTodos();
-
-        // Assert
-        assertNotNull(resultado);
-        assertEquals(2, resultado.size());
-        assertEquals(1, resultado.get(0).getIdProdutoPedido());
-        assertEquals(2, resultado.get(1).getIdProdutoPedido());
-        verify(itemPedidoRepository).findAll();
-    }
-
-    @Test
     @DisplayName("Deve cadastrar um novo item de pedido com sucesso")
     void testCadastrar() {
         // Arrange

@@ -97,53 +97,6 @@ class CancelamentoPedidoServiceTest {
     }
 
     @Test
-    @DisplayName("Deve listar todos os cancelamentos")
-    void testListarTodos() {
-        // Arrange
-        Pedido pedido2 = new Pedido();
-        pedido2.setIdPedido(2);
-
-        CancelamentoPedido cancelamento2 = new CancelamentoPedido();
-        cancelamento2.setIdCancelamento(2);
-        cancelamento2.setPedido(pedido2);
-        cancelamento2.setTipoCancelamento(TipoCancelamento.ERRO_PEDIDO);
-        cancelamento2.setTipoRetorno(TipoRetorno.DEVOLUCAO);
-        cancelamento2.setValorRetorno(BigDecimal.valueOf(100.0));
-        cancelamento2.setObservacao("Cliente trocou de produto");
-
-        CancelamentoPedidoResponseDTO dto2 = new CancelamentoPedidoResponseDTO();
-        dto2.setIdCancelamento(2);
-        dto2.setPedidoId(2);
-
-        when(cancelamentoPedidoRepository.findAll()).thenReturn(List.of(cancelamento, cancelamento2));
-        when(cancelamentoPedidoMapper.toResponseDTO(cancelamento)).thenReturn(responseDTO);
-        when(cancelamentoPedidoMapper.toResponseDTO(cancelamento2)).thenReturn(dto2);
-
-        // Act
-        List<CancelamentoPedidoResponseDTO> resultado = cancelamentoPedidoService.listarTodos();
-
-        // Assert
-        assertNotNull(resultado);
-        assertEquals(2, resultado.size());
-        verify(cancelamentoPedidoRepository).findAll();
-    }
-
-    @Test
-    @DisplayName("Deve retornar lista vazia quando não houver cancelamentos")
-    void testListarTodosVazio() {
-        // Arrange
-        when(cancelamentoPedidoRepository.findAll()).thenReturn(List.of());
-
-        // Act
-        List<CancelamentoPedidoResponseDTO> resultado = cancelamentoPedidoService.listarTodos();
-
-        // Assert
-        assertNotNull(resultado);
-        assertTrue(resultado.isEmpty());
-        verify(cancelamentoPedidoRepository).findAll();
-    }
-
-    @Test
     @DisplayName("Deve criar um novo cancelamento com sucesso")
     void testCadastrarCancelamento() {
         // Arrange

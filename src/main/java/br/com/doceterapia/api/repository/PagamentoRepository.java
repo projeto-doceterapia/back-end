@@ -14,6 +14,9 @@ import java.util.Optional;
 
 public interface PagamentoRepository extends JpaRepository<Pagamento, Integer> {
 
+    @Query("SELECT pg FROM Pagamento pg JOIN FETCH pg.pedido p JOIN FETCH p.cliente WHERE p.idPedido IN :pedidoIds ORDER BY p.idPedido")
+    List<Pagamento> buscarPorPedidos(@Param("pedidoIds") Collection<Integer> pedidoIds);
+
     boolean existsByPedidoIdPedido(Integer pedidoId);
 
     Optional<Pagamento> findByPedidoIdPedido(Integer pedidoId);

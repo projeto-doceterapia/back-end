@@ -17,15 +17,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.time.LocalDate;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.format.annotation.DateTimeFormat;
+import br.com.doceterapia.api.service.PedidoConsultaService;
 
 @RestController
 @RequestMapping("/cancelamentos")
 public class CancelamentoPedidoController implements CancelamentoPedidoControllerOpenApi {
 
     private final CancelamentoPedidoService service;
+    private final PedidoConsultaService consultaService;
 
-    public CancelamentoPedidoController(CancelamentoPedidoService service) {
+    public CancelamentoPedidoController(CancelamentoPedidoService service, PedidoConsultaService consultaService) {
         this.service = service;
+        this.consultaService = consultaService;
     }
 
     @PostMapping("/pedido/{pedidoId}")
@@ -39,8 +45,10 @@ public class CancelamentoPedidoController implements CancelamentoPedidoControlle
 
     @GetMapping
     @Override
-    public ResponseEntity<List<CancelamentoPedidoResponseDTO>> listarCancelamentos() {
-        return ResponseEntity.ok(service.listarTodos());
+    public ResponseEntity<List<CancelamentoPedidoResponseDTO>> listarCancelamentos(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate) {
+        return ResponseEntity.ok(consultaService.listarCancelamentos(de, ate));
     }
 
     @GetMapping("/{id}")

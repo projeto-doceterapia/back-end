@@ -61,12 +61,6 @@ public class CancelamentoPedidoService {
         return mapper.toResponseDTO(entity);
     }
 
-    public List<CancelamentoPedidoResponseDTO> listarTodos() {
-        return repository.findAll().stream()
-                .map(mapper::toResponseDTO)
-                .toList();
-    }
-
     public CancelamentoPedidoResponseDTO buscarPorId(Integer id) {
         CancelamentoPedido entity = repository.findById(id)
                 .orElseThrow(CancelamentoPedidoIdDontExistsException::new);
