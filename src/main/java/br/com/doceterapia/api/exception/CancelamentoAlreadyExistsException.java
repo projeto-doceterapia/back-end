@@ -5,4 +5,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(value = HttpStatus.CONFLICT, reason = "Já existe um cancelamento cadastrado para este pedido")
 public class CancelamentoAlreadyExistsException extends RuntimeException {
+    public CancelamentoAlreadyExistsException() {
+        super("Já existe um cancelamento cadastrado para este pedido");
+    }
 }

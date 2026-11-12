@@ -24,6 +24,9 @@ import br.com.doceterapia.api.repository.PedidoRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +50,15 @@ class CancelamentoPedidoServiceTest {
     @Mock
     private PedidoService pedidoService;
 
+    @Mock
+    private MaquinaStatusPedido maquinaStatusPedido;
+
+    @Mock
+    private BloqueioPedidoService bloqueioPedidoService;
+
+    @Mock
+    private Clock clock;
+
     @InjectMocks
     private CancelamentoPedidoService cancelamentoPedidoService;
 
@@ -59,6 +71,10 @@ class CancelamentoPedidoServiceTest {
     void setUp() {
         pedido = new Pedido();
         pedido.setIdPedido(1);
+        pedido.setStatusPedido(StatusPedido.ORCAMENTO);
+        lenient().when(bloqueioPedidoService.buscar(1)).thenReturn(pedido);
+        lenient().when(clock.instant()).thenReturn(Instant.parse("2026-11-10T15:00:00Z"));
+        lenient().when(clock.getZone()).thenReturn(ZoneId.of("America/Sao_Paulo"));
 
         cancelamento = new CancelamentoPedido();
         cancelamento.setIdCancelamento(1);
@@ -134,7 +150,6 @@ class CancelamentoPedidoServiceTest {
         Integer pedidoId = 1;
         when(pedidoRepository.existsById(pedidoId)).thenReturn(true);
         when(cancelamentoPedidoRepository.existsByPedidoIdPedido(pedidoId)).thenReturn(false);
-        when(pedidoRepository.findById(pedidoId)).thenReturn(Optional.of(pedido));
         when(cancelamentoPedidoMapper.toEntity(requestDTO)).thenReturn(cancelamento);
         when(cancelamentoPedidoRepository.save(any(CancelamentoPedido.class))).thenReturn(cancelamento);
         when(cancelamentoPedidoMapper.toResponseDTO(cancelamento)).thenReturn(responseDTO);
@@ -149,7 +164,8 @@ class CancelamentoPedidoServiceTest {
         verify(cancelamentoPedidoRepository).existsByPedidoIdPedido(pedidoId);
         verify(cancelamentoPedidoMapper).toEntity(requestDTO);
         verify(cancelamentoPedidoRepository).save(any(CancelamentoPedido.class));
-        verify(pedidoService).atualizarStatus(pedidoId, StatusPedido.CANCELADO);
+        verify(pedidoRepository).save(pedido);
+        assertEquals(StatusPedido.CANCELADO, pedido.getStatusPedido());
     }
 
     @Test

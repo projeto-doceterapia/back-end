@@ -20,8 +20,6 @@ public class PedidoMapper {
         Pedido pedido = new Pedido();
         pedido.setCliente(clienteRepository.findById(dto.getClienteId())
                 .orElseThrow(ClienteIdDontExistsException::new));
-        pedido.setTipoPedido(dto.getTipoPedido());
-        pedido.setStatusPedido(dto.getStatusPedido());
         pedido.setFormaEntrega(dto.getFormaEntrega());
         pedido.setEnderecoEntrega(dto.getEnderecoEntrega());
         pedido.setCep(dto.getCep());

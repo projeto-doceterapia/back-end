@@ -123,7 +123,7 @@ por campo: um custo devolvido por uma rota aberta, como `GET /produtos`, continu
 | Preços e ficha técnica | `POST /produtos`, `PUT /produtos/{id}`, `DELETE /produtos/{id}`; `POST`, `PUT /{id}` e `DELETE /{id}` em `/produtos/{produtoId}/insumos`; `/configuracao-precificacao` |
 | Cancelamentos | `POST /cancelamentos/pedido/{pedidoId}`, `PUT` e `DELETE /cancelamentos/{id}`; `PATCH /pedidos/{id}/status` com `statusPedido=CANCELADO` |
 | Confirmar com falta | qualquer requisição com `confirmarComFalta=true` |
-| Dinheiro | `DELETE /pedidos/{id}`, `PUT /pagamentos/{id}`, `DELETE /pagamentos/{id}`, `GET /indicadores/financeiros` |
+| Dinheiro | `DELETE /pedidos/{id}`, `DELETE /pagamentos/{id}`, `GET /indicadores/financeiros` |
 | Clientes | `DELETE /clientes/{id}` (inativa o cliente) e `PATCH /clientes/{id}/reativar` |
 | Configurações | `PUT /configuracao-notificacao`, `POST` e `PUT /configuracao-farol` |
 
@@ -241,7 +241,7 @@ Escolha o valor antes da primeira subida. Para trocar, recrie o banco:
 
 O perfil `local` não roda o Flyway, então `DEMO_DATA` não tem efeito nele.
 
-As colunas `produto.custo_estimado`, `produto.preco_sugerido` e `pagamento.forma_pagamento` ficam
+As colunas `produto.custo_estimado` e `produto.preco_sugerido` ficam
 `NULL` no demo. Enquanto o custo do produto for gravado nessas colunas, `POST /itens-pedido` num
 produto do demo responde 500 ao calcular a margem do item.
 
@@ -276,7 +276,7 @@ as demais rotas seguem a seção [Autenticação](#autenticação).
 | Insumos | `/insumos` | CRUD, `GET /catalogo`, `POST /obter-ou-criar` |
 | Pedidos | `/pedidos` | CRUD + transição de status |
 | Itens de pedido | `/itens-pedido` | CRUD |
-| Pagamentos | `/pagamentos` | `GET`, `GET /{id}`, `GET /pedido/{pedidoId}`, `PUT /{id}` |
+| Pagamentos | `/pagamentos` | `GET`, `GET /{id}`, `GET /pedido/{pedidoId}`, `PATCH /{id}/registrar-sinal`, `PATCH /{id}/registrar-restante` |
 | Cancelamentos | `/cancelamentos` | `POST /pedido/{pedidoId}`, consultas |
 | Produção | `/producoes` | CRUD + transição de status |
 | Estoque | `/estoque/movimentos` | `POST` entrada de compra, `GET?de&ate&insumoId` movimentações do período (`de` e `ate` obrigatórios em `yyyy-MM-dd`, no máximo 366 dias; `insumoId` opcional) |
@@ -285,6 +285,33 @@ as demais rotas seguem a seção [Autenticação](#autenticação).
 | Farol da agenda | `/configuracao-farol` | `POST`, `GET`, `PUT` |
 | Notificações | `/notificacoes` | CRUD, `PATCH /{id}/marcar-lida`, `GET /nao-lidas`, `GET /stream` (SSE), `GET /agenda`, `POST /{id}/confirmacao-envio`, `POST /teste` (notificação de teste, com intervalo mínimo) |
 | Configuração de notificações | `/configuracao-notificacao` | `GET`, `PUT` |
+
+### Pagamentos
+
+O pagamento de um pedido confirmado é calculado pelos itens persistidos. A resposta retorna as parcelas
+`valorSinal` e `valorRestante`, e as formas de pagamento independentes `formaPagamentoSinal` e
+`formaPagamentoRestante`. O campo legado `formaPagamento` não faz parte do contrato.
+
+Registre o sinal com `PATCH /pagamentos/{id}/registrar-sinal`:
+
+```json
+{
+  "formaPagamento": "PIX",
+  "dataPagamento": "2026-11-11"
+}
+```
+
+Registre o restante com `PATCH /pagamentos/{id}/registrar-restante`:
+
+```json
+{
+  "formaPagamento": "DINHEIRO",
+  "dataPagamento": "2026-11-11"
+}
+```
+
+`dataPagamento` é opcional e, quando ausente, usa a data atual do servidor. As rotas rejeitam data futura,
+pedido sem itens, pedido cancelado e registros repetidos ou fora de ordem conforme o contrato de erros da API.
 
 ### Indicadores
 

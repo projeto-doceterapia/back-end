@@ -24,13 +24,9 @@ public interface PedidoControllerOpenApi {
             @ApiResponse(responseCode = "201", description = "Pedido cadastrado com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PedidoResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos:\n" +
-                    "- ID do cliente não fornecido\n" +
-                    "- Tipo do pedido não fornecido\n" +
-                    "- Status do pedido não fornecido\n" +
-                    "- Data de entrega no passado\n" +
-                    "- Campos obrigatórios em branco"),
+            @ApiResponse(responseCode = "400", description = "Dados obrigatórios inválidos ou ausentes"),
             @ApiResponse(responseCode = "404", description = "Cliente com ID fornecido não encontrado"),
+            @ApiResponse(responseCode = "422", description = "Data de entrega no passado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     ResponseEntity<PedidoResponseDTO> cadastrarPedido(
@@ -54,13 +50,9 @@ public interface PedidoControllerOpenApi {
             @ApiResponse(responseCode = "200", description = "Pedido atualizado com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PedidoResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos:\n" +
-                    "- Tipo do pedido não fornecido\n" +
-                    "- Status do pedido não fornecido\n" +
-                    "- Data de entrega no passado\n" +
-                    "- Endereço de entrega obrigatório para forma de entrega ENTREGA\n" +
-                    "- Campos obrigatórios em branco"),
+            @ApiResponse(responseCode = "400", description = "Dados obrigatórios inválidos ou ausentes"),
             @ApiResponse(responseCode = "404", description = "Pedido com ID fornecido não encontrado"),
+            @ApiResponse(responseCode = "422", description = "Nova data de entrega no passado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     ResponseEntity<PedidoResponseDTO> atualizarPedido(
@@ -87,11 +79,9 @@ public interface PedidoControllerOpenApi {
             @ApiResponse(responseCode = "200", description = "Status do pedido atualizado com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PedidoResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos fornecidos:\n" +
-                    "- ID do pedido não fornecido\n" +
-                    "- Status não fornecido\n" +
-                    "- Transição de status não permitida"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou ausentes"),
             @ApiResponse(responseCode = "404", description = "Pedido com ID fornecido não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Transição de status não permitida"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     ResponseEntity<PedidoResponseDTO> atualizarStatus(

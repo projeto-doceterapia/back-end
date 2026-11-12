@@ -4,7 +4,6 @@ import br.com.doceterapia.api.enums.FormaEntrega;
 import br.com.doceterapia.api.enums.StatusPedido;
 import br.com.doceterapia.api.enums.TipoPedido;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -18,12 +17,10 @@ public class PedidoRequestDTO {
     @Schema(description = "ID do cliente associado ao pedido", example = "1")
     private Integer clienteId;
 
-    @NotNull(message = "Tipo do pedido é obrigatório")
-    @Schema(description = "Tipo do pedido", example = "ORCAMENTO")
+    @Schema(description = "Campo ignorado; o tipo é derivado do status", example = "ORCAMENTO")
     private TipoPedido tipoPedido;
 
-    @NotNull(message = "Status do pedido é obrigatório")
-    @Schema(description = "Status do pedido", example = "ORCAMENTO")
+    @Schema(description = "Status inicial do pedido", example = "ORCAMENTO")
     private StatusPedido statusPedido;
 
     @Schema(description = "Forma de entrega do pedido", example = "ENTREGA")
@@ -38,7 +35,6 @@ public class PedidoRequestDTO {
     private String cep;
 
     @NotNull(message = "Data de entrega é obrigatória")
-    @FutureOrPresent(message = "Data de entrega deve ser hoje ou uma data futura")
     @Schema(description = "Data de entrega do pedido", example = "2026-04-15", type = "string", format = "date")
     private LocalDate dataEntrega;
 

@@ -36,8 +36,12 @@ public class Pagamento {
     private BigDecimal valorRestante;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private FormaPagamento formaPagamento;
+    @Column(length = 30)
+    private FormaPagamento formaPagamentoSinal;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private FormaPagamento formaPagamentoRestante;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
@@ -87,12 +91,20 @@ public class Pagamento {
         this.valorRestante = valorRestante;
     }
 
-    public FormaPagamento getFormaPagamento() {
-        return formaPagamento;
+    public FormaPagamento getFormaPagamentoSinal() {
+        return formaPagamentoSinal;
     }
 
-    public void setFormaPagamento(FormaPagamento formaPagamento) {
-        this.formaPagamento = formaPagamento;
+    public void setFormaPagamentoSinal(FormaPagamento formaPagamentoSinal) {
+        this.formaPagamentoSinal = formaPagamentoSinal;
+    }
+
+    public FormaPagamento getFormaPagamentoRestante() {
+        return formaPagamentoRestante;
+    }
+
+    public void setFormaPagamentoRestante(FormaPagamento formaPagamentoRestante) {
+        this.formaPagamentoRestante = formaPagamentoRestante;
     }
 
     public StatusPagamento getStatusPagamento() {

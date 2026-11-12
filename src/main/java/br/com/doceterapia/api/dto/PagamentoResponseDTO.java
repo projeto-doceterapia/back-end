@@ -25,8 +25,11 @@ public class PagamentoResponseDTO {
     @Schema(description = "Valor restante a pagar em reais", example = "125.00")
     private BigDecimal valorRestante;
 
-    @Schema(description = "Forma de pagamento", example = "PIX")
-    private FormaPagamento formaPagamento;
+    @Schema(description = "Forma de pagamento do sinal", example = "PIX")
+    private FormaPagamento formaPagamentoSinal;
+
+    @Schema(description = "Forma de pagamento do restante", example = "DINHEIRO")
+    private FormaPagamento formaPagamentoRestante;
 
     @Schema(description = "Status do pagamento", example = "AGUARDANDO_SINAL")
     private StatusPagamento statusPagamento;
@@ -77,12 +80,20 @@ public class PagamentoResponseDTO {
         this.valorRestante = valorRestante;
     }
 
-    public FormaPagamento getFormaPagamento() {
-        return formaPagamento;
+    public FormaPagamento getFormaPagamentoSinal() {
+        return formaPagamentoSinal;
     }
 
-    public void setFormaPagamento(FormaPagamento formaPagamento) {
-        this.formaPagamento = formaPagamento;
+    public void setFormaPagamentoSinal(FormaPagamento formaPagamentoSinal) {
+        this.formaPagamentoSinal = formaPagamentoSinal;
+    }
+
+    public FormaPagamento getFormaPagamentoRestante() {
+        return formaPagamentoRestante;
+    }
+
+    public void setFormaPagamentoRestante(FormaPagamento formaPagamentoRestante) {
+        this.formaPagamentoRestante = formaPagamentoRestante;
     }
 
     public StatusPagamento getStatusPagamento() {

@@ -15,8 +15,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -28,7 +26,7 @@ import java.util.stream.Collectors;
 public class RequestValidationExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Map<String, Object>> handleNotReadable(
+    public ResponseEntity<ErroResponseDTO> handleNotReadable(
             HttpMessageNotReadableException ex, HttpServletRequest request) {
         String message = "Corpo da requisição inválido ou mal formatado";
 
@@ -43,7 +41,7 @@ public class RequestValidationExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleBeanValidation(
+    public ResponseEntity<ErroResponseDTO> handleBeanValidation(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .findFirst()
@@ -75,19 +73,19 @@ public class RequestValidationExceptionHandler {
     }
 
     @ExceptionHandler(ConfiguracaoNotificacaoInvalidaException.class)
-    public ResponseEntity<Map<String, Object>> handleConfiguracaoInvalida(
+    public ResponseEntity<ErroResponseDTO> handleConfiguracaoInvalida(
             ConfiguracaoNotificacaoInvalidaException ex, HttpServletRequest request) {
         return construir(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
     }
 
     @ExceptionHandler(UnidadeIncompativelException.class)
-    public ResponseEntity<Map<String, Object>> handleUnidadeIncompativel(
+    public ResponseEntity<ErroResponseDTO> handleUnidadeIncompativel(
             UnidadeIncompativelException ex, HttpServletRequest request) {
         return construir(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
     }
 
     @ExceptionHandler(UsuarioEmailAlreadyExistsException.class)
-    public ResponseEntity<Map<String, Object>> handleUsuarioEmailDuplicado(
+    public ResponseEntity<ErroResponseDTO> handleUsuarioEmailDuplicado(
             UsuarioEmailAlreadyExistsException ex, HttpServletRequest request) {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
@@ -105,6 +103,19 @@ public class RequestValidationExceptionHandler {
                 ex.getSegundosRestantes()));
     }
 
+    @ExceptionHandler({ConflitoEstadoException.class, StatusTransitionInvalidException.class,
+            CancelamentoAlreadyExistsException.class})
+    public ResponseEntity<ErroResponseDTO> handleConflito(RuntimeException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErroResponseDTO.de(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(RegraNegocioException.class)
+    public ResponseEntity<ErroResponseDTO> handleRegraNegocio(RegraNegocioException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(ErroResponseDTO.de(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request.getRequestURI()));
+    }
+
     private ResponseEntity<ErroResponseDTO> erro(String message, HttpServletRequest request) {
         return ResponseEntity.badRequest()
                 .body(ErroResponseDTO.de(HttpStatus.BAD_REQUEST, message, request.getRequestURI()));
@@ -118,14 +129,8 @@ public class RequestValidationExceptionHandler {
         return "Tipo inválido: '" + valor + "'. Valores aceitos: " + aceitos;
     }
 
-    private ResponseEntity<Map<String, Object>> construir(
+    private ResponseEntity<ErroResponseDTO> construir(
             HttpStatus status, String message, HttpServletRequest request) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", status.value());
-        body.put("error", status.getReasonPhrase());
-        body.put("message", message);
-        body.put("path", request.getRequestURI());
-        return ResponseEntity.status(status).body(body);
+        return ResponseEntity.status(status).body(ErroResponseDTO.de(status, message, request.getRequestURI()));
     }
 }

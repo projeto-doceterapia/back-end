@@ -12,8 +12,11 @@ import br.com.doceterapia.api.mapper.CancelamentoPedidoMapper;
 import br.com.doceterapia.api.repository.CancelamentoPedidoRepository;
 import br.com.doceterapia.api.repository.PedidoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.time.LocalDateTime;
+import java.time.Clock;
 import java.util.List;
 
 @Service
@@ -22,32 +25,39 @@ public class CancelamentoPedidoService {
     private final CancelamentoPedidoRepository repository;
     private final PedidoRepository pedidoRepository;
     private final CancelamentoPedidoMapper mapper;
-    private final PedidoService pedidoService;
+    private final MaquinaStatusPedido maquinaStatusPedido;
+    private final BloqueioPedidoService bloqueioPedidoService;
+    private final Clock clock;
 
     public CancelamentoPedidoService(CancelamentoPedidoRepository repository,
                                      PedidoRepository pedidoRepository,
                                      CancelamentoPedidoMapper mapper,
-                                     PedidoService pedidoService) {
+                                     MaquinaStatusPedido maquinaStatusPedido,
+                                     BloqueioPedidoService bloqueioPedidoService, Clock clock) {
         this.repository = repository;
         this.pedidoRepository = pedidoRepository;
         this.mapper = mapper;
-        this.pedidoService = pedidoService;
+        this.maquinaStatusPedido = maquinaStatusPedido;
+        this.bloqueioPedidoService = bloqueioPedidoService;
+        this.clock = clock;
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public CancelamentoPedidoResponseDTO criar(Integer pedidoId, CancelamentoPedidoRequestDTO dto) {
         if (!pedidoRepository.existsById(pedidoId)) {
             throw new PedidoIdDontExistsException();
         }
+        Pedido pedido = bloqueioPedidoService.buscar(pedidoId);
         if (repository.existsByPedidoIdPedido(pedidoId)) {
             throw new CancelamentoAlreadyExistsException();
         }
-        Pedido pedido = pedidoRepository.findById(pedidoId)
-                .orElseThrow(PedidoIdDontExistsException::new);
+        maquinaStatusPedido.validar(pedido.getStatusPedido(), StatusPedido.CANCELADO);
+        pedido.setStatusPedido(StatusPedido.CANCELADO);
+        pedidoRepository.save(pedido);
         CancelamentoPedido entity = mapper.toEntity(dto);
         entity.setPedido(pedido);
-        entity.setDataCancelamento(LocalDateTime.now());
+        entity.setDataCancelamento(LocalDateTime.now(clock));
         repository.save(entity);
-        pedidoService.atualizarStatus(pedidoId, StatusPedido.CANCELADO);
         return mapper.toResponseDTO(entity);
     }
 
