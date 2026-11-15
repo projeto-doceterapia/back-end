@@ -70,7 +70,8 @@ public class PedidoController implements PedidoControllerOpenApi {
     @Override
     public ResponseEntity<PedidoResponseDTO> atualizarStatus(
             @PathVariable Integer id,
-            @RequestParam StatusPedido statusPedido) {
-        return ResponseEntity.ok(service.atualizarStatus(id, statusPedido));
+            @RequestParam StatusPedido statusPedido,
+            @RequestParam(defaultValue = "false") boolean confirmarComFalta) {
+        return ResponseEntity.ok(service.atualizarStatus(id, statusPedido, confirmarComFalta));
     }
 }

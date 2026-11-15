@@ -37,8 +37,9 @@ public class ItemPedidoController implements ItemPedidoControllerOpenApi {
     @PostMapping
     @Override
     public ResponseEntity<ItemPedidoResponseDTO> cadastrarItemPedido(
-            @Valid @org.springframework.web.bind.annotation.RequestBody ItemPedidoRequestDTO request) {
-        ItemPedidoResponseDTO response = mapper.toResponseDTO(service.cadastrar(request));
+            @Valid @org.springframework.web.bind.annotation.RequestBody ItemPedidoRequestDTO request,
+            @RequestParam(defaultValue = "false") boolean confirmarComFalta) {
+        ItemPedidoResponseDTO response = mapper.toResponseDTO(service.cadastrar(request, confirmarComFalta));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -46,8 +47,9 @@ public class ItemPedidoController implements ItemPedidoControllerOpenApi {
     @Override
     public ResponseEntity<ItemPedidoResponseDTO> atualizarItemPedido(
             @PathVariable Integer id,
-            @Valid @org.springframework.web.bind.annotation.RequestBody ItemPedidoRequestDTO request) {
-        ItemPedidoResponseDTO response = mapper.toResponseDTO(service.atualizar(id, request));
+            @Valid @org.springframework.web.bind.annotation.RequestBody ItemPedidoRequestDTO request,
+            @RequestParam(defaultValue = "false") boolean confirmarComFalta) {
+        ItemPedidoResponseDTO response = mapper.toResponseDTO(service.atualizar(id, request, confirmarComFalta));
         return ResponseEntity.ok(response);
     }
 

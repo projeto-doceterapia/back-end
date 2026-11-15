@@ -17,6 +17,9 @@ public interface ProdutoInsumoRepository extends JpaRepository<ProdutoInsumo, In
 
     boolean existsByProdutoIdProduto(Integer produtoId);
 
+    @Query("select distinct pi.produto.idProduto from ProdutoInsumo pi where pi.produto.idProduto in :ids")
+    List<Integer> findProdutoIdsComFicha(@Param("ids") Collection<Integer> ids);
+
     boolean existsByInsumoIdInsumo(Integer insumoId);
 
     boolean existsByProdutoIdProdutoAndInsumoIdInsumo(Integer produtoId, Integer insumoId);

@@ -101,5 +101,7 @@ public interface PedidoControllerOpenApi {
             @Parameter(description = "ID do pedido", example = "1", required = true)
             Integer id,
             @Parameter(description = "Novo status do pedido", example = "AGUARDANDO_SINAL", required = true)
-            StatusPedido statusPedido);
+            StatusPedido statusPedido,
+            @Parameter(description = "Permite à DONA confirmar apesar das faltas de insumo", example = "false")
+            boolean confirmarComFalta);
 }

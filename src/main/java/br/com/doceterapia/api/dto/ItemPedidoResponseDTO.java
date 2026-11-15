@@ -36,6 +36,9 @@ public class ItemPedidoResponseDTO {
     @Schema(description = "Observação sobre o item", example = "Sem glúten")
     private String observacao;
 
+    @Schema(description = "Indica que o produto não possui ficha técnica")
+    private boolean semFichaTecnica;
+
     public Integer getIdProdutoPedido() {
         return idProdutoPedido;
     }
@@ -115,4 +118,8 @@ public class ItemPedidoResponseDTO {
     public void setObservacao(String observacao) {
         this.observacao = observacao;
     }
+
+    public boolean isSemFichaTecnica() { return semFichaTecnica; }
+
+    public void setSemFichaTecnica(boolean semFichaTecnica) { this.semFichaTecnica = semFichaTecnica; }
 }

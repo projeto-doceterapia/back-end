@@ -9,8 +9,10 @@ import br.com.doceterapia.api.exception.PedidoIdDontExistsException;
 import br.com.doceterapia.api.exception.ProdutoIdDontExistsException;
 import br.com.doceterapia.api.repository.PedidoRepository;
 import br.com.doceterapia.api.repository.ProdutoRepository;
+import br.com.doceterapia.api.repository.ProdutoInsumoRepository;
 import br.com.doceterapia.api.service.precificacao.PrecificacaoService;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -21,12 +23,20 @@ public class ItemPedidoMapper {
     private final ProdutoRepository produtoRepository;
     private final PedidoRepository pedidoRepository;
     private final PrecificacaoService precificacaoService;
+    private final ProdutoInsumoRepository produtoInsumoRepository;
 
+    @Autowired
     public ItemPedidoMapper(ProdutoRepository produtoRepository, PedidoRepository pedidoRepository,
-                            PrecificacaoService precificacaoService) {
+                            PrecificacaoService precificacaoService, ProdutoInsumoRepository produtoInsumoRepository) {
         this.produtoRepository = produtoRepository;
         this.pedidoRepository = pedidoRepository;
         this.precificacaoService = precificacaoService;
+        this.produtoInsumoRepository = produtoInsumoRepository;
+    }
+
+    public ItemPedidoMapper(ProdutoRepository produtoRepository, PedidoRepository pedidoRepository,
+                            PrecificacaoService precificacaoService) {
+        this(produtoRepository, pedidoRepository, precificacaoService, null);
     }
 
     public ItemPedido toEntity(ItemPedidoRequestDTO dto) {
@@ -54,6 +64,12 @@ public class ItemPedidoMapper {
     }
 
     public ItemPedidoResponseDTO toResponseDTO(ItemPedido entity) {
+        boolean temFichaTecnica = produtoInsumoRepository != null
+                && produtoInsumoRepository.existsByProdutoIdProduto(entity.getProduto().getIdProduto());
+        return toResponseDTO(entity, temFichaTecnica);
+    }
+
+    public ItemPedidoResponseDTO toResponseDTO(ItemPedido entity, boolean temFichaTecnica) {
         ItemPedidoResponseDTO dto = new ItemPedidoResponseDTO();
         dto.setIdProdutoPedido(entity.getIdProdutoPedido());
         dto.setFkProduto(entity.getProduto().getIdProduto());
@@ -65,6 +81,7 @@ public class ItemPedidoMapper {
         dto.setCustoEstimadoItem(entity.getCustoEstimadoItem());
         dto.setMargemLucroItem(entity.getMargemLucroItem());
         dto.setObservacao(entity.getObservacao());
+        dto.setSemFichaTecnica(!temFichaTecnica);
         return dto;
     }
 }

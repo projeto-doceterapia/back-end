@@ -19,7 +19,9 @@ import br.com.doceterapia.api.repository.ItemPedidoRepository;
 import br.com.doceterapia.api.repository.PagamentoRepository;
 import br.com.doceterapia.api.repository.PedidoRepository;
 import br.com.doceterapia.api.repository.ProducaoRepository;
+import br.com.doceterapia.api.repository.ProdutoInsumoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -41,12 +43,15 @@ public class PedidoConsultaService {
     private final PagamentoMapper pagamentoMapper;
     private final ProducaoMapper producaoMapper;
     private final CancelamentoPedidoMapper cancelamentoMapper;
+    private final ProdutoInsumoRepository produtoInsumoRepository;
 
+    @Autowired
     public PedidoConsultaService(PedidoRepository pedidos, ItemPedidoRepository itens,
                                  PagamentoRepository pagamentos, ProducaoRepository producoes,
                                  CancelamentoPedidoRepository cancelamentos, PedidoMapper pedidoMapper,
                                  ItemPedidoMapper itemMapper, PagamentoMapper pagamentoMapper,
-                                 ProducaoMapper producaoMapper, CancelamentoPedidoMapper cancelamentoMapper) {
+                                 ProducaoMapper producaoMapper, CancelamentoPedidoMapper cancelamentoMapper,
+                                 ProdutoInsumoRepository produtoInsumoRepository) {
         this.pedidos = pedidos;
         this.itens = itens;
         this.pagamentos = pagamentos;
@@ -57,6 +62,16 @@ public class PedidoConsultaService {
         this.pagamentoMapper = pagamentoMapper;
         this.producaoMapper = producaoMapper;
         this.cancelamentoMapper = cancelamentoMapper;
+        this.produtoInsumoRepository = produtoInsumoRepository;
+    }
+
+    public PedidoConsultaService(PedidoRepository pedidos, ItemPedidoRepository itens,
+                                 PagamentoRepository pagamentos, ProducaoRepository producoes,
+                                 CancelamentoPedidoRepository cancelamentos, PedidoMapper pedidoMapper,
+                                 ItemPedidoMapper itemMapper, PagamentoMapper pagamentoMapper,
+                                 ProducaoMapper producaoMapper, CancelamentoPedidoMapper cancelamentoMapper) {
+        this(pedidos, itens, pagamentos, producoes, cancelamentos, pedidoMapper, itemMapper, pagamentoMapper,
+                producaoMapper, cancelamentoMapper, null);
     }
     public List<PedidoResponseDTO> listarPedidos(
             LocalDate de, LocalDate ate, List<StatusPedido> status, Integer clienteId) {
@@ -93,7 +108,14 @@ public class PedidoConsultaService {
     }
 
     public List<ItemPedidoResponseDTO> listarItens(List<Integer> ids) {
-        return itens.buscarPorPedidos(validarIds(ids)).stream().map(itemMapper::toResponseDTO).toList();
+        var itensPedido = itens.buscarPorPedidos(validarIds(ids));
+        if (produtoInsumoRepository == null) {
+            return itensPedido.stream().map(itemMapper::toResponseDTO).toList();
+        }
+        var produtosComFicha = java.util.Set.copyOf(produtoInsumoRepository.findProdutoIdsComFicha(itensPedido.stream()
+                .map(item -> item.getProduto().getIdProduto()).distinct().toList()));
+        return itensPedido.stream().map(item -> itemMapper.toResponseDTO(item,
+                produtosComFicha.contains(item.getProduto().getIdProduto()))).toList();
     }
 
     public List<ItemPedidoResponseDTO> listarItensComParametros(String[] ids) {

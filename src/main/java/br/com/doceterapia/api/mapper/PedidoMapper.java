@@ -42,6 +42,7 @@ public class PedidoMapper {
         response.setAnotacao(pedido.getAnotacao());
         response.setDataCriacao(pedido.getDataCriacao());
         response.setDataConfirmacao(pedido.getDataConfirmacao());
+        response.setConfirmadoComFaltaInsumo(pedido.isConfirmadoComFaltaInsumo());
         return response;
     }
 }

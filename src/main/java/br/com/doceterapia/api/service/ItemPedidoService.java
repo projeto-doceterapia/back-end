@@ -18,6 +18,7 @@ import br.com.doceterapia.api.enums.StatusPedido;
 import br.com.doceterapia.api.entity.Pedido;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -34,11 +35,14 @@ public class ItemPedidoService {
     private final PagamentoRepository pagamentoRepository;
     private final PagamentoService pagamentoService;
     private final BloqueioPedidoService bloqueioPedidoService;
+    private final ViabilidadeInsumoService viabilidadeInsumoService;
 
+    @Autowired
     public ItemPedidoService(ItemPedidoRepository repository, ItemPedidoMapper mapper,
                              ProdutoRepository produtoRepository, PedidoRepository pedidoRepository,
                              ProducaoRepository producaoRepository, PagamentoRepository pagamentoRepository,
-                             PagamentoService pagamentoService, BloqueioPedidoService bloqueioPedidoService) {
+                             PagamentoService pagamentoService, BloqueioPedidoService bloqueioPedidoService,
+                             ViabilidadeInsumoService viabilidadeInsumoService) {
         this.repository = repository;
         this.mapper = mapper;
         this.produtoRepository = produtoRepository;
@@ -47,10 +51,24 @@ public class ItemPedidoService {
         this.pagamentoRepository = pagamentoRepository;
         this.pagamentoService = pagamentoService;
         this.bloqueioPedidoService = bloqueioPedidoService;
+        this.viabilidadeInsumoService = viabilidadeInsumoService;
+    }
+
+    public ItemPedidoService(ItemPedidoRepository repository, ItemPedidoMapper mapper,
+                             ProdutoRepository produtoRepository, PedidoRepository pedidoRepository,
+                             ProducaoRepository producaoRepository, PagamentoRepository pagamentoRepository,
+                             PagamentoService pagamentoService, BloqueioPedidoService bloqueioPedidoService) {
+        this(repository, mapper, produtoRepository, pedidoRepository, producaoRepository, pagamentoRepository,
+                pagamentoService, bloqueioPedidoService, null);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public ItemPedido cadastrar(ItemPedidoRequestDTO request) {
+        return cadastrar(request, false);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ItemPedido cadastrar(ItemPedidoRequestDTO request, boolean confirmarComFalta) {
         if (!produtoRepository.existsById(request.getFkProduto())) {
             throw new ProdutoIdDontExistsException();
         }
@@ -59,9 +77,16 @@ public class ItemPedidoService {
             throw new PedidoIdDontExistsException();
         }
 
-        permitirAlteracao(bloqueioPedidoService.buscar(request.getFkPedido()));
+        Pedido pedido = bloqueioPedidoService.buscar(request.getFkPedido());
+        permitirAlteracao(pedido);
 
         ItemPedido entity = mapper.toEntity(request);
+        if (deveVerificar(pedido) && viabilidadeInsumoService != null) {
+            List<ItemPedido> propostos = new java.util.ArrayList<>(repository.findByPedidoIdPedido(pedido.getIdPedido()));
+            propostos.add(entity);
+            viabilidadeInsumoService.exigirViabilidade(pedido, propostos, confirmarComFalta,
+                    "Faltam insumos para alterar os itens do pedido.");
+        }
         repository.save(entity);
         pagamentoService.recalcular(entity.getPedido().getIdPedido());
         return entity;
@@ -69,6 +94,11 @@ public class ItemPedidoService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public ItemPedido atualizar(Integer id, ItemPedidoRequestDTO request) {
+        return atualizar(id, request, false);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ItemPedido atualizar(Integer id, ItemPedidoRequestDTO request, boolean confirmarComFalta) {
         if (!repository.existsById(id)) {
             throw new ItemPedidoIdDontExistsException();
         }
@@ -85,6 +115,7 @@ public class ItemPedidoService {
         }
 
         ItemPedido entity = repository.findById(id).orElseThrow(ItemPedidoIdDontExistsException::new);
+        BigDecimal quantidadeAnterior = entity.getQuantidade();
         entity.setQuantidade(request.getQuantidade());
         entity.setValorUnitario(request.getValorUnitario());
         entity.setObservacao(request.getObservacao());
@@ -94,6 +125,12 @@ public class ItemPedidoService {
         entity.setValorTotal(valorTotal);
         BigDecimal custoEstimadoItem = entity.getCustoEstimadoItem();
         entity.setMargemLucroItem(custoEstimadoItem == null ? null : valorTotal.subtract(custoEstimadoItem));
+
+        if (deveVerificar(pedido) && viabilidadeInsumoService != null
+                && request.getQuantidade().compareTo(quantidadeAnterior) > 0) {
+            viabilidadeInsumoService.exigirViabilidade(pedido, repository.findByPedidoIdPedido(pedidoId), confirmarComFalta,
+                    "Faltam insumos para alterar os itens do pedido.");
+        }
 
         repository.save(entity);
         pagamentoService.recalcular(pedidoId);
@@ -121,5 +158,10 @@ public class ItemPedidoService {
                 .map(pagamento -> pagamento.getStatusPagamento() == StatusPagamento.PAGO_INTEGRAL).orElse(false)) {
             throw new PedidoFinanceiramenteFechadoException();
         }
+    }
+
+    private boolean deveVerificar(Pedido pedido) {
+        return pedido.getStatusPedido() == StatusPedido.AGUARDANDO_SINAL
+                || pedido.getStatusPedido() == StatusPedido.ESPERANDO_FAZER;
     }
 }

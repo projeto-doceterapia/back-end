@@ -47,6 +47,9 @@ public class PedidoResponseDTO {
     @Schema(description = "Data de confirmação do pedido", example = "2026-04-11T10:00:00")
     private LocalDateTime dataConfirmacao;
 
+    @Schema(description = "Indica que a DONA confirmou o pedido apesar de falta de insumo")
+    private boolean confirmadoComFaltaInsumo;
+
     public Integer getIdPedido() {
         return idPedido;
     }
@@ -133,6 +136,14 @@ public class PedidoResponseDTO {
 
     public void setDataConfirmacao(LocalDateTime dataConfirmacao) {
         this.dataConfirmacao = dataConfirmacao;
+    }
+
+    public boolean isConfirmadoComFaltaInsumo() {
+        return confirmadoComFaltaInsumo;
+    }
+
+    public void setConfirmadoComFaltaInsumo(boolean confirmadoComFaltaInsumo) {
+        this.confirmadoComFaltaInsumo = confirmadoComFaltaInsumo;
     }
 
     public String getCep() {
