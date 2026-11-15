@@ -341,6 +341,15 @@ vêm `null`. `custoEstimado` e `precoSugerido` enviados no corpo de `POST` e `PU
 `precoAbaixoDoSugerido` é `true` quando `precoAtual` e `precoSugerido` existem e o atual é menor.
 O item de pedido novo grava o custo calculado no momento; itens antigos não mudam.
 
+## Viabilidade de insumos
+
+Ao confirmar um orçamento, ou ao incluir/aumentar um item de pedido em `AGUARDANDO_SINAL` ou
+`ESPERANDO_FAZER`, a API calcula a necessidade total pela ficha técnica e compara com o estoque disponível.
+Faltas retornam 422 com `faltas` (insumo, nome, necessário, disponível e unidade). A DONA pode reenviar a
+mesma operação com `confirmarComFalta=true`; o pedido passa a retornar `confirmadoComFaltaInsumo=true`.
+Uma FUNCIONARIA recebe 403 ao usar esse parâmetro. Itens sem ficha não bloqueiam a operação e retornam
+`semFichaTecnica=true`.
+
 ## Notificações
 
 Alertas e resumos são criados com uma chave de unicidade (sem duplicar) e uma
