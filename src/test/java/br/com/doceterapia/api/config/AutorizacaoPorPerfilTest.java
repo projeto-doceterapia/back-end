@@ -60,6 +60,7 @@ class AutorizacaoPorPerfilTest {
             PATCH,  /pedidos/1/status?statusPedido=cancelado,
             PATCH,  /pedidos/1/status?statusPedido=EM_PRODUCAO&statusPedido=CANCELADO,
             POST,   /itens-pedido?confirmarComFalta=true,
+            PUT,    /itens-pedido/1?confirmarComFalta=true,
             PATCH,  /pedidos/1/status?statusPedido=EM_PRODUCAO&confirmarComFalta=TRUE,
             PUT,    /pedidos/1?confirmarComFalta=true,
             DELETE, /clientes/1,

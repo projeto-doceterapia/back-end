@@ -31,6 +31,13 @@ class ConversaoUnidadeServiceTest {
     }
 
     @Test
+    @DisplayName("Deve manter seis casas ao converter gramas para quilos")
+    void gramasParaKgComEscalaExplicita() {
+        BigDecimal resultado = service.converter(new BigDecimal("12.345"), UnidadeMedida.G, UnidadeMedida.KG);
+        assertEquals(new BigDecimal("0.012345"), resultado);
+    }
+
+    @Test
     @DisplayName("Deve converter KG para G multiplicando por 1000")
     void kgParaGramas() {
         BigDecimal resultado = service.converter(BigDecimal.valueOf(2), UnidadeMedida.KG, UnidadeMedida.G);

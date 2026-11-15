@@ -42,7 +42,7 @@ class ItemPedidoControllerTest {
 
     @Test
     void deveResponder422QuandoTotalAbaixoDoSinal() throws Exception {
-        when(service.atualizar(eq(31), any())).thenThrow(
+        when(service.atualizar(eq(31), any(), eq(false))).thenThrow(
                 new TotalAbaixoDoSinalPagoException(new java.math.BigDecimal("80.00"), new java.math.BigDecimal("92.95")));
         mockMvc.perform(put("/itens-pedido/31").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"fkPedido\":1,\"fkProduto\":1,\"quantidade\":1,\"valorUnitario\":80.00}"))
@@ -50,6 +50,18 @@ class ItemPedidoControllerTest {
                 .andExpect(jsonPath("$.error").value("Unprocessable Entity"))
                 .andExpect(jsonPath("$.message").value("O total do pedido (R$ 80,00) não pode ficar abaixo do sinal já pago (R$ 92,95)."))
                 .andExpect(jsonPath("$.path").value("/itens-pedido/31"));
+    }
+
+    @Test
+    void deveRepassarOverrideNaInclusaoDeItem() throws Exception {
+        when(service.cadastrar(any(), eq(true))).thenReturn(new br.com.doceterapia.api.entity.ItemPedido());
+        when(mapper.toResponseDTO(any())).thenReturn(new br.com.doceterapia.api.dto.ItemPedidoResponseDTO());
+
+        mockMvc.perform(post("/itens-pedido").param("confirmarComFalta", "true")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fkPedido\":1,\"fkProduto\":1,\"quantidade\":1,\"valorUnitario\":80.00}"))
+                .andExpect(status().isCreated());
+        verify(service).cadastrar(any(), eq(true));
     }
 
     @Test
