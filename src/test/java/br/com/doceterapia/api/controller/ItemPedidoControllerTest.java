@@ -2,6 +2,7 @@ package br.com.doceterapia.api.controller;
 
 import br.com.doceterapia.api.exception.*;
 import br.com.doceterapia.api.service.ItemPedidoService;
+import br.com.doceterapia.api.service.PedidoConsultaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
@@ -16,7 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -34,6 +35,9 @@ class ItemPedidoControllerTest {
     private ItemPedidoService service;
 
     @MockitoBean
+    private PedidoConsultaService consultaService;
+
+    @MockitoBean
     private br.com.doceterapia.api.mapper.ItemPedidoMapper mapper;
 
     @Test
@@ -46,5 +50,17 @@ class ItemPedidoControllerTest {
                 .andExpect(jsonPath("$.error").value("Unprocessable Entity"))
                 .andExpect(jsonPath("$.message").value("O total do pedido (R$ 80,00) não pode ficar abaixo do sinal já pago (R$ 92,95)."))
                 .andExpect(jsonPath("$.path").value("/itens-pedido/31"));
+    }
+
+    @Test
+    void deveExigirPedidoIdEAceitarIdsDuplicados() throws Exception {
+        when(consultaService.listarItensComParametros(any(String[].class))).thenReturn(java.util.List.of());
+        when(consultaService.listarItensComParametros(isNull()))
+                .thenThrow(new FiltroInvalidoException("Informe ao menos um pedidoId."));
+
+        mockMvc.perform(get("/itens-pedido")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/itens-pedido").param("pedidoId", "1,1").param("pedidoId", "2"))
+                .andExpect(status().isOk());
+        verify(consultaService).listarItensComParametros(new String[] {"1,1", "2"});
     }
 }

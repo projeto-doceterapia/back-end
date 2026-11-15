@@ -18,14 +18,18 @@ import java.util.List;
 @Tag(name = "Produção", description = "Endpoints para gerenciamento de produção")
 public interface ProducaoControllerOpenApi {
 
-    @Operation(summary = "Listar todas as produções", description = "Retorna uma lista com todas as produções cadastradas no sistema")
+    @Operation(summary = "Listar produções por período", description = "Retorna produções no período inclusivo informado, com filtro opcional de status.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Produções listadas com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ProducaoResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Período ou status inválido"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    ResponseEntity<List<ProducaoResponseDTO>> listarProducoes();
+    ResponseEntity<List<ProducaoResponseDTO>> listarProducoes(
+            @Parameter(description = "Data inicial do período", example = "2026-11-01", required = true) java.time.LocalDate de,
+            @Parameter(description = "Data final inclusiva do período", example = "2026-11-30", required = true) java.time.LocalDate ate,
+            @Parameter(description = "Status aceitos, em CSV ou repetido", example = "EM_PRODUCAO,PRONTO_PARA_ENTREGA") String[] status);
 
     @Operation(summary = "Buscar produção por ID", description = "Retorna uma produção pelo seu ID")
     @ApiResponses({

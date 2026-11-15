@@ -17,14 +17,17 @@ import java.util.List;
 @Tag(name = "Itens do Pedido", description = "Endpoints para gerenciamento de itens do pedido")
 public interface ItemPedidoControllerOpenApi {
 
-    @Operation(summary = "Listar todos os itens de pedido", description = "Retorna uma lista com todos os itens de pedido cadastrados no sistema")
+    @Operation(summary = "Listar itens por pedido", description = "Retorna itens dos pedidos informados em pedidoId, aceitando valores em CSV ou repetidos.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Itens de pedido listados com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ItemPedidoResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "pedidoId ausente, inválido ou com mais de 500 valores distintos"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    ResponseEntity<List<ItemPedidoResponseDTO>> listarItensPedido();
+    ResponseEntity<List<ItemPedidoResponseDTO>> listarItensPedido(
+            @Parameter(description = "IDs dos pedidos, em CSV ou repetidos; máximo de 500 valores distintos", example = "1,2,3", required = true)
+            String[] pedidoId);
 
     @Operation(summary = "Cadastrar novo item de pedido",
             description = "Cria um novo item de pedido no sistema com os dados fornecidos")

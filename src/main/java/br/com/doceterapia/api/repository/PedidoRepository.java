@@ -15,8 +15,14 @@ import java.util.Collection;
 import java.util.List;
 public interface PedidoRepository extends JpaRepository<Pedido, Integer> {
 
-    @Query("SELECT p FROM Pedido p JOIN FETCH p.cliente ORDER BY p.statusPedido, p.dataEntrega")
-    List<Pedido> findAllWithClienteEager();
+    @Query("SELECT p FROM Pedido p JOIN FETCH p.cliente WHERE p.dataEntrega BETWEEN :de AND :ate AND p.statusPedido IN :status ORDER BY p.statusPedido, p.dataEntrega, p.idPedido")
+    List<Pedido> buscarPorPeriodo(@Param("de") LocalDate de, @Param("ate") LocalDate ate, @Param("status") Collection<StatusPedido> status);
+    @Query("SELECT p FROM Pedido p JOIN FETCH p.cliente c WHERE c.idCliente = :clienteId AND p.statusPedido IN :status ORDER BY p.statusPedido, p.dataEntrega, p.idPedido")
+    List<Pedido> buscarPorCliente(@Param("clienteId") Integer clienteId, @Param("status") Collection<StatusPedido> status);
+    @Query("SELECT p FROM Pedido p JOIN FETCH p.cliente c WHERE c.idCliente = :clienteId AND p.dataEntrega BETWEEN :de AND :ate AND p.statusPedido IN :status ORDER BY p.statusPedido, p.dataEntrega, p.idPedido")
+    List<Pedido> buscarPorClienteEPeriodo(@Param("clienteId") Integer clienteId, @Param("de") LocalDate de, @Param("ate") LocalDate ate, @Param("status") Collection<StatusPedido> status);
+    @Query("SELECT p FROM Pedido p JOIN FETCH p.cliente WHERE p.idPedido = :id")
+    java.util.Optional<Pedido> buscarDetalhePorId(@Param("id") Integer id);
 
     @Query("SELECT COUNT(p) FROM Pedido p WHERE p.dataEntrega = :dataEntrega "
             + "AND p.statusPedido <> br.com.doceterapia.api.enums.StatusPedido.CANCELADO")

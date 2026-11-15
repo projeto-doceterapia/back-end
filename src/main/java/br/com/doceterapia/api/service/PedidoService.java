@@ -46,10 +46,6 @@ public class PedidoService {
         this.clock = clock;
     }
 
-    public List<PedidoResponseDTO> listarTodos() {
-        return repository.findAllWithClienteEager().stream().map(mapper::toPedidoResponse).toList();
-    }
-
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public PedidoResponseDTO cadastrar(PedidoRequestDTO request) {
         Pedido pedido = mapper.toPedido(request);

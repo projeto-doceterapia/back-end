@@ -49,10 +49,6 @@ public class ItemPedidoService {
         this.bloqueioPedidoService = bloqueioPedidoService;
     }
 
-    public List<ItemPedido> listarTodos() {
-        return repository.findAll();
-    }
-
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public ItemPedido cadastrar(ItemPedidoRequestDTO request) {
         if (!produtoRepository.existsById(request.getFkProduto())) {

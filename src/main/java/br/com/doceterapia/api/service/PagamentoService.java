@@ -43,7 +43,6 @@ public class PagamentoService {
         this.clock = clock;
     }
 
-    public List<PagamentoResponseDTO> listarTodos() { return pagamentoRepository.findAll().stream().map(mapper::toResponseDTO).toList(); }
     public PagamentoResponseDTO buscarPorId(Integer id) { return mapper.toResponseDTO(pagamentoRepository.findById(id).orElseThrow(PagamentoIdDontExistsException::new)); }
     public PagamentoResponseDTO buscarPorPedidoId(Integer pedidoId) { return mapper.toResponseDTO(pagamentoRepository.findByPedidoIdPedido(pedidoId).orElseThrow(PagamentoIdDontExistsException::new)); }
 

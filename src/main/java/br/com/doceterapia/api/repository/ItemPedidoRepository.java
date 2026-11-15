@@ -16,6 +16,9 @@ import java.util.List;
 
 public interface ItemPedidoRepository extends JpaRepository<ItemPedido, Integer> {
 
+    @Query("SELECT i FROM ItemPedido i JOIN FETCH i.pedido p JOIN FETCH p.cliente JOIN FETCH i.produto pr JOIN FETCH pr.categoriaProduto WHERE p.idPedido IN :pedidoIds ORDER BY p.idPedido, i.idProdutoPedido")
+    List<ItemPedido> buscarPorPedidos(@Param("pedidoIds") Collection<Integer> pedidoIds);
+
     List<ItemPedido> findByPedidoIdPedido(Integer pedidoId);
 
     @Query("SELECT i.pedido.idPedido FROM ItemPedido i WHERE i.idProdutoPedido = :id")

@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import br.com.doceterapia.api.service.PedidoConsultaService;
 
 import java.util.List;
 
@@ -20,15 +22,18 @@ import java.util.List;
 public class PagamentoController implements PagamentoControllerOpenApi {
 
     private final PagamentoService service;
+    private final PedidoConsultaService consultaService;
 
-    public PagamentoController(PagamentoService service) {
+    public PagamentoController(PagamentoService service, PedidoConsultaService consultaService) {
         this.service = service;
+        this.consultaService = consultaService;
     }
 
     @GetMapping
     @Override
-    public ResponseEntity<List<PagamentoResponseDTO>> listarPagamentos() {
-        return ResponseEntity.ok(service.listarTodos());
+    public ResponseEntity<List<PagamentoResponseDTO>> listarPagamentos(
+            @RequestParam(required = false) String[] pedidoId) {
+        return ResponseEntity.ok(consultaService.listarPagamentosComParametros(pedidoId));
     }
 
     @GetMapping("/{id}")

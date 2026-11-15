@@ -17,14 +17,17 @@ import java.util.List;
 @Tag(name = "Pagamentos", description = "Endpoints para gerenciamento de pagamentos")
 public interface PagamentoControllerOpenApi {
 
-    @Operation(summary = "Listar todos os pagamentos", description = "Retorna todos os pagamentos cadastrados")
+    @Operation(summary = "Listar pagamentos por pedido", description = "Retorna pagamentos dos pedidos informados em pedidoId, aceitando valores em CSV ou repetidos.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Pagamentos listados com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PagamentoResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "pedidoId ausente, inválido ou com mais de 500 valores distintos"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    ResponseEntity<List<PagamentoResponseDTO>> listarPagamentos();
+    ResponseEntity<List<PagamentoResponseDTO>> listarPagamentos(
+            @Parameter(description = "IDs dos pedidos, em CSV ou repetidos; máximo de 500 valores distintos", example = "1,2,3", required = true)
+            String[] pedidoId);
 
     @Operation(summary = "Buscar pagamento por ID", description = "Retorna um pagamento pelo seu ID")
     @ApiResponses({

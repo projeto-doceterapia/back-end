@@ -211,12 +211,6 @@ class PagamentoServiceTest {
     }
 
     @Test
-    void deveListarPagamentos() {
-        when(pagamentoRepository.findAll()).thenReturn(List.of(pagamento));
-        assertEquals(1, service.listarTodos().size());
-    }
-
-    @Test
     void deveRecusarConsultaInexistente() {
         assertThrows(PagamentoIdDontExistsException.class, () -> service.buscarPorId(999));
         assertThrows(PagamentoIdDontExistsException.class, () -> service.buscarPorPedidoId(999));

@@ -11,15 +11,20 @@ import br.com.doceterapia.api.service.PedidoService;
 import br.com.doceterapia.api.swagger.PedidoControllerOpenApi;
 
 import java.util.List;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
+import br.com.doceterapia.api.service.PedidoConsultaService;
 
 @RestController
 @RequestMapping("/pedidos")
 public class PedidoController implements PedidoControllerOpenApi {
 
     private final PedidoService service;
+    private final PedidoConsultaService consultaService;
 
-    public PedidoController(PedidoService service) {
+    public PedidoController(PedidoService service, PedidoConsultaService consultaService) {
         this.service = service;
+        this.consultaService = consultaService;
     }
 
     @PostMapping
@@ -31,8 +36,18 @@ public class PedidoController implements PedidoControllerOpenApi {
 
     @GetMapping
     @Override
-    public ResponseEntity<List<PedidoResponseDTO>> listarPedidos() {
-        return ResponseEntity.ok(service.listarTodos());
+    public ResponseEntity<List<PedidoResponseDTO>> listarPedidos(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate,
+            @RequestParam(required = false) String[] status,
+            @RequestParam(required = false) Integer clienteId) {
+        return ResponseEntity.ok(consultaService.listarPedidosComParametros(de, ate, status, clienteId));
+    }
+
+    @GetMapping("/{id}")
+    @Override
+    public ResponseEntity<PedidoResponseDTO> buscarPedido(@PathVariable Integer id) {
+        return ResponseEntity.ok(consultaService.buscarPedido(id));
     }
 
     @PutMapping("/{id}")

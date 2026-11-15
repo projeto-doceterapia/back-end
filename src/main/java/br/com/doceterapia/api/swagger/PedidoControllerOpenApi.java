@@ -34,15 +34,28 @@ public interface PedidoControllerOpenApi {
                     content = @Content(schema = @Schema(implementation = PedidoRequestDTO.class)))
             PedidoRequestDTO request);
 
-    @Operation(summary = "Listar todos os pedidos",
-            description = "Retorna uma lista com todos os pedidos cadastrados, incluindo informações do cliente")
+    @Operation(summary = "Listar pedidos com filtros obrigatórios",
+            description = "Retorna pedidos por período e status. Para consultar apenas um cliente, clienteId pode ser usado sem período.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Pedidos listados com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PedidoResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Período, status ou clienteId inválido"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    ResponseEntity<List<PedidoResponseDTO>> listarPedidos();
+    ResponseEntity<List<PedidoResponseDTO>> listarPedidos(
+            @Parameter(description = "Data inicial do período, obrigatória sem clienteId", example = "2026-11-01") java.time.LocalDate de,
+            @Parameter(description = "Data final inclusiva do período, obrigatória sem clienteId", example = "2026-11-30") java.time.LocalDate ate,
+            @Parameter(description = "Status aceitos, em CSV ou repetido", example = "EM_PRODUCAO,AGUARDANDO_ENTREGA") String[] status,
+            @Parameter(description = "ID do cliente; permite consulta sem período", example = "1") Integer clienteId);
+
+    @Operation(summary = "Buscar pedido por ID", description = "Retorna os dados atuais de um pedido")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pedido encontrado", content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = PedidoResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Pedido não encontrado")
+    })
+    ResponseEntity<PedidoResponseDTO> buscarPedido(@Parameter(description = "ID do pedido", example = "1") Integer id);
 
     @Operation(summary = "Atualizar pedido",
             description = "Atualiza os dados de um pedido existente")

@@ -8,8 +8,13 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.List;
+import java.time.LocalDateTime;
 
 public interface CancelamentoPedidoRepository extends JpaRepository<CancelamentoPedido, Integer> {
+
+    @Query("SELECT c FROM CancelamentoPedido c JOIN FETCH c.pedido p JOIN FETCH p.cliente WHERE c.dataCancelamento >= :inicio AND c.dataCancelamento < :fimExclusivo ORDER BY c.dataCancelamento, c.idCancelamento")
+    List<CancelamentoPedido> buscarPorPeriodo(@Param("inicio") LocalDateTime inicio, @Param("fimExclusivo") LocalDateTime fimExclusivo);
 
     boolean existsByPedidoIdPedido(Integer pedidoId);
 
