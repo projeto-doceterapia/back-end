@@ -87,12 +87,12 @@ public interface ProducaoControllerOpenApi {
             Integer id);
 
     @Operation(summary = "Atualizar status da produção",
-            description = "Atualiza o status de uma produção seguindo o fluxo: ESPERANDO_FAZER → EM_PRODUCAO → PRONTO_PARA_ENTREGA → FINALIZADO")
+            description = "Delega o avanço operacional ao pedido vinculado e devolve a produção refletida. ESPERANDO_FAZER só é alcançado pelo registro do sinal.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Status atualizado com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ProducaoResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Transição de status inválida ou produção já finalizada"),
+            @ApiResponse(responseCode = "409", description = "Transição de status inválida"),
             @ApiResponse(responseCode = "404", description = "Produção com ID fornecido não encontrada"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })

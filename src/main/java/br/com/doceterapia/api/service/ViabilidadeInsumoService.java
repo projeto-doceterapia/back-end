@@ -7,6 +7,7 @@ import br.com.doceterapia.api.entity.Pedido;
 import br.com.doceterapia.api.entity.ProdutoInsumo;
 import br.com.doceterapia.api.exception.InsumosInsuficientesException;
 import br.com.doceterapia.api.repository.ProdutoInsumoRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,27 +26,43 @@ public class ViabilidadeInsumoService {
     private final ProdutoInsumoRepository produtoInsumoRepository;
     private final ConversaoUnidadeService conversaoUnidadeService;
     private final DisponibilidadeInsumoService disponibilidadeInsumoService;
+    private final BloqueioInsumoService bloqueioInsumoService;
+
+    @Autowired
+    public ViabilidadeInsumoService(ProdutoInsumoRepository produtoInsumoRepository,
+                                    ConversaoUnidadeService conversaoUnidadeService,
+                                    DisponibilidadeInsumoService disponibilidadeInsumoService,
+                                    BloqueioInsumoService bloqueioInsumoService) {
+        this.produtoInsumoRepository = produtoInsumoRepository;
+        this.conversaoUnidadeService = conversaoUnidadeService;
+        this.disponibilidadeInsumoService = disponibilidadeInsumoService;
+        this.bloqueioInsumoService = bloqueioInsumoService;
+    }
 
     public ViabilidadeInsumoService(ProdutoInsumoRepository produtoInsumoRepository,
                                     ConversaoUnidadeService conversaoUnidadeService,
                                     DisponibilidadeInsumoService disponibilidadeInsumoService) {
-        this.produtoInsumoRepository = produtoInsumoRepository;
-        this.conversaoUnidadeService = conversaoUnidadeService;
-        this.disponibilidadeInsumoService = disponibilidadeInsumoService;
+        this(produtoInsumoRepository, conversaoUnidadeService, disponibilidadeInsumoService, null);
     }
 
     public void exigirViabilidade(Pedido pedido, Collection<ItemPedido> itens, boolean confirmarComFalta,
                                   String mensagem) {
         List<ProdutoInsumo> fichas = produtoInsumoRepository.findComInsumoByProdutoIds(itens.stream()
                 .map(item -> item.getProduto().getIdProduto()).collect(Collectors.toSet()));
-        Map<Integer, Insumo> insumos = fichas.stream()
+        Map<Integer, Insumo> insumosOriginais = fichas.stream()
                 .map(ProdutoInsumo::getInsumo)
                 .collect(Collectors.toMap(Insumo::getIdInsumo, Function.identity(), (primeiro, segundo) -> primeiro));
+        Map<Integer, Insumo> insumos = insumosOriginais;
+        if (bloqueioInsumoService != null) {
+            insumos = bloqueioInsumoService.bloquearEmOrdem(insumosOriginais.keySet()).stream()
+                    .collect(Collectors.toMap(Insumo::getIdInsumo, Function.identity()));
+        }
+        final Map<Integer, Insumo> insumosComTrava = insumos;
         Map<Integer, BigDecimal> necessidades = fichas.stream()
                 .collect(Collectors.groupingBy(linha -> linha.getInsumo().getIdInsumo(), Collectors.reducing(BigDecimal.ZERO,
                         linha -> quantidadeConvertida(itens, linha), BigDecimal::add)));
         List<FaltaInsumoDTO> faltas = necessidades.entrySet().stream()
-                .map(entry -> falta(insumos.get(entry.getKey()), entry.getValue(), pedido))
+                .map(entry -> falta(insumosComTrava.get(entry.getKey()), entry.getValue(), pedido))
                 .filter(java.util.Objects::nonNull)
                 .sorted(Comparator.comparing(FaltaInsumoDTO::nome))
                 .toList();

@@ -16,6 +16,22 @@ import java.util.List;
 
 public interface ItemPedidoRepository extends JpaRepository<ItemPedido, Integer> {
 
+    @Query("SELECT new br.com.doceterapia.api.repository.ConsumoPrevistoInsumo("
+            + "pi.insumo.idInsumo, pi.unidade, SUM(i.quantidade * pi.quantidadeUtilizada)) "
+            + "FROM ItemPedido i JOIN ProdutoInsumo pi ON pi.produto = i.produto "
+            + "WHERE i.pedido.statusPedido IN :statuses AND pi.insumo.idInsumo IN :insumoIds "
+            + "AND (:pedidoIgnorado IS NULL OR i.pedido.idPedido <> :pedidoIgnorado) "
+            + "GROUP BY pi.insumo.idInsumo, pi.unidade")
+    List<ConsumoPrevistoInsumo> somarConsumoReservado(@Param("statuses") Collection<StatusPedido> statuses,
+                                                      @Param("insumoIds") Collection<Integer> insumoIds,
+                                                      @Param("pedidoIgnorado") Integer pedidoIgnorado);
+
+    @Query("SELECT new br.com.doceterapia.api.repository.ConsumoPrevistoInsumo("
+            + "pi.insumo.idInsumo, pi.unidade, SUM(i.quantidade * pi.quantidadeUtilizada)) "
+            + "FROM ItemPedido i JOIN ProdutoInsumo pi ON pi.produto = i.produto "
+            + "WHERE i.pedido.idPedido = :pedidoId GROUP BY pi.insumo.idInsumo, pi.unidade")
+    List<ConsumoPrevistoInsumo> somarConsumoPorPedido(@Param("pedidoId") Integer pedidoId);
+
     @Query("SELECT i FROM ItemPedido i JOIN FETCH i.pedido p JOIN FETCH p.cliente JOIN FETCH i.produto pr JOIN FETCH pr.categoriaProduto WHERE p.idPedido IN :pedidoIds ORDER BY p.idPedido, i.idProdutoPedido")
     List<ItemPedido> buscarPorPedidos(@Param("pedidoIds") Collection<Integer> pedidoIds);
 

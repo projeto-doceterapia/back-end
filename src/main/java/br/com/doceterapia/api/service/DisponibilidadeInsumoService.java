@@ -8,7 +8,15 @@ import java.math.BigDecimal;
 
 @Service
 public class DisponibilidadeInsumoService {
+    private final ReservaInsumoService reservaInsumoService;
+
+    public DisponibilidadeInsumoService(ReservaInsumoService reservaInsumoService) {
+        this.reservaInsumoService = reservaInsumoService;
+    }
+
     public BigDecimal disponivel(Insumo insumo, Pedido pedidoEmAnalise) {
-        return insumo.getQuantidadeAtual();
+        Integer pedidoIgnorado = pedidoEmAnalise != null ? pedidoEmAnalise.getIdPedido() : null;
+        return reservaInsumoService.disponivelPorInsumo(java.util.List.of(insumo), pedidoIgnorado)
+                .get(insumo.getIdInsumo());
     }
 }
