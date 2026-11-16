@@ -9,6 +9,8 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatchers;
 
 import java.util.Arrays;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Every rule that only the owner (DONA) passes lives here. These rules must be
@@ -22,6 +24,8 @@ public final class AutorizacaoPorPerfil {
     private static final String PARAMETRO_CONFIRMAR_COM_FALTA = "confirmarComFalta";
     private static final String PARAMETRO_STATUS_PEDIDO = "statusPedido";
     private static final String STATUS_CANCELADO = "CANCELADO";
+    // Values Spring's StringToBooleanConverter binds to true.
+    private static final Set<String> VALORES_VERDADEIROS = Set.of("true", "on", "yes", "1");
 
     private AutorizacaoPorPerfil() {
     }
@@ -68,11 +72,7 @@ public final class AutorizacaoPorPerfil {
         return (HttpServletRequest request) -> {
             String[] valores = request.getParameterValues(nome);
             return valores != null && Arrays.stream(valores)
-                    .map(String::trim)
-                    .anyMatch(valor -> "true".equalsIgnoreCase(valor)
-                            || "1".equals(valor)
-                            || "yes".equalsIgnoreCase(valor)
-                            || "on".equalsIgnoreCase(valor));
+                    .anyMatch(valor -> VALORES_VERDADEIROS.contains(valor.trim().toLowerCase(Locale.ROOT)));
         };
     }
 }
