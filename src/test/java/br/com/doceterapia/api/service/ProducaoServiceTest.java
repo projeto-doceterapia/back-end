@@ -194,4 +194,19 @@ class ProducaoServiceTest {
         verify(producaoRepository).existsById(id);
         verify(producaoRepository, never()).deleteById(any());
     }
+
+    @Test
+    @DisplayName("Delega o inÃ­cio da produÃ§Ã£o ao fluxo central do pedido")
+    void atualizarStatusDelegaParaPedidoService() {
+        PedidoService pedidoService = mock(PedidoService.class);
+        ProducaoService service = new ProducaoService(producaoRepository, producaoMapper, pedidoRepository, pedidoService);
+        producao.setStatusProducao(StatusProducao.ESPERANDO_FAZER);
+        when(producaoRepository.findById(1)).thenReturn(Optional.of(producao));
+        when(producaoMapper.toResponseDTO(producao)).thenReturn(producaoResponseDTO);
+
+        service.atualizarStatus(1, StatusProducao.EM_PRODUCAO);
+
+        verify(pedidoService).atualizarStatus(1, br.com.doceterapia.api.enums.StatusPedido.EM_PRODUCAO);
+        verify(producaoRepository, times(2)).findById(1);
+    }
 }
