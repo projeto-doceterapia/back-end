@@ -11,9 +11,11 @@ import br.com.doceterapia.api.exception.PedidoIdDontExistsException;
 import br.com.doceterapia.api.exception.StatusTransitionInvalidException;
 import br.com.doceterapia.api.mapper.PedidoMapper;
 import br.com.doceterapia.api.repository.PedidoRepository;
+import br.com.doceterapia.api.repository.ItemPedidoRepository;
 import br.com.doceterapia.api.service.notificacao.AlertaDiaLotadoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.web.server.ResponseStatusException;
@@ -33,10 +35,14 @@ public class PedidoService {
     private final MaquinaStatusPedido maquinaStatusPedido;
     private final BloqueioPedidoService bloqueioPedidoService;
     private final Clock clock;
+    private final ItemPedidoRepository itemPedidoRepository;
+    private final ViabilidadeInsumoService viabilidadeInsumoService;
 
+    @Autowired
     public PedidoService(PedidoRepository repository, PedidoMapper mapper, PagamentoService pagamentoService,
                          AlertaDiaLotadoService alertaDiaLotadoService, MaquinaStatusPedido maquinaStatusPedido,
-                         BloqueioPedidoService bloqueioPedidoService, Clock clock) {
+                         BloqueioPedidoService bloqueioPedidoService, Clock clock, ItemPedidoRepository itemPedidoRepository,
+                         ViabilidadeInsumoService viabilidadeInsumoService) {
         this.repository = repository;
         this.mapper = mapper;
         this.pagamentoService = pagamentoService;
@@ -44,6 +50,15 @@ public class PedidoService {
         this.maquinaStatusPedido = maquinaStatusPedido;
         this.bloqueioPedidoService = bloqueioPedidoService;
         this.clock = clock;
+        this.itemPedidoRepository = itemPedidoRepository;
+        this.viabilidadeInsumoService = viabilidadeInsumoService;
+    }
+
+    public PedidoService(PedidoRepository repository, PedidoMapper mapper, PagamentoService pagamentoService,
+                         AlertaDiaLotadoService alertaDiaLotadoService, MaquinaStatusPedido maquinaStatusPedido,
+                         BloqueioPedidoService bloqueioPedidoService, Clock clock) {
+        this(repository, mapper, pagamentoService, alertaDiaLotadoService, maquinaStatusPedido, bloqueioPedidoService,
+                clock, null, null);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -96,6 +111,11 @@ public class PedidoService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public PedidoResponseDTO atualizarStatus(Integer id, StatusPedido novoStatus) {
+        return atualizarStatus(id, novoStatus, false);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public PedidoResponseDTO atualizarStatus(Integer id, StatusPedido novoStatus, boolean confirmarComFalta) {
         Pedido pedido = bloqueioPedidoService.buscar(id);
         if (novoStatus == StatusPedido.CANCELADO) {
             throw new StatusTransitionInvalidException("Use o registro de cancelamento para cancelar um pedido.");
@@ -104,6 +124,10 @@ public class PedidoService {
             throw new StatusTransitionInvalidException("O pedido só pode avançar após o registro do sinal.");
         }
         maquinaStatusPedido.validar(pedido.getStatusPedido(), novoStatus);
+        if (novoStatus == StatusPedido.AGUARDANDO_SINAL && viabilidadeInsumoService != null) {
+            viabilidadeInsumoService.exigirViabilidade(pedido, itemPedidoRepository.findByPedidoIdPedido(id),
+                    confirmarComFalta, "Faltam insumos para confirmar o pedido.");
+        }
         pedido.setStatusPedido(novoStatus);
         if (novoStatus == StatusPedido.AGUARDANDO_SINAL) {
             pedido.setTipoPedido(TipoPedido.PEDIDO_CONFIRMADO);

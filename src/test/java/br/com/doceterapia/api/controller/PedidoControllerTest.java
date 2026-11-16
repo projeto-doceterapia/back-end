@@ -3,6 +3,8 @@ package br.com.doceterapia.api.controller;
 import br.com.doceterapia.api.exception.*;
 import br.com.doceterapia.api.service.PedidoService;
 import br.com.doceterapia.api.service.PedidoConsultaService;
+import br.com.doceterapia.api.dto.FaltaInsumoDTO;
+import br.com.doceterapia.api.enums.UnidadeMedida;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
@@ -97,13 +99,27 @@ class PedidoControllerTest {
 
     @Test
     void deveResponder409ParaTransicaoInvalida() throws Exception {
-        when(service.atualizarStatus(1, br.com.doceterapia.api.enums.StatusPedido.ENTREGUE))
+        when(service.atualizarStatus(1, br.com.doceterapia.api.enums.StatusPedido.ENTREGUE, false))
                 .thenThrow(new StatusTransitionInvalidException("Transição de ORCAMENTO para ENTREGUE não é permitida"));
         mockMvc.perform(patch("/pedidos/1/status").param("statusPedido", "ENTREGUE"))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.error").value("Conflict"))
                 .andExpect(jsonPath("$.message").value("Transição de ORCAMENTO para ENTREGUE não é permitida"))
                 .andExpect(jsonPath("$.path").value("/pedidos/1/status"));
+    }
+
+    @Test
+    void deveResponder422ComFaltasNaConfirmacao() throws Exception {
+        var falta = new FaltaInsumoDTO(7, "Chocolate", new java.math.BigDecimal("1.200"),
+                new java.math.BigDecimal("0.800"), UnidadeMedida.KG);
+        when(service.atualizarStatus(1, br.com.doceterapia.api.enums.StatusPedido.AGUARDANDO_SINAL, false))
+                .thenThrow(new InsumosInsuficientesException("Faltam insumos para confirmar o pedido.", java.util.List.of(falta)));
+
+        mockMvc.perform(patch("/pedidos/1/status").param("statusPedido", "AGUARDANDO_SINAL"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.faltas[0].insumoId").value(7))
+                .andExpect(jsonPath("$.faltas[0].necessario").value(1.2))
+                .andExpect(jsonPath("$.faltas[0].unidade").value("KG"));
     }
 
     @Test

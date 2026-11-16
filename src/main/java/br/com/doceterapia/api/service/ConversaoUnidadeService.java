@@ -5,6 +5,7 @@ import br.com.doceterapia.api.exception.UnidadeIncompativelException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * Deterministic unit conversion for stock movements.
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
 public class ConversaoUnidadeService {
 
     private static final BigDecimal FATOR_MILHAR = BigDecimal.valueOf(1000);
+    private static final int ESCALA_CONVERSAO = 6;
 
     public BigDecimal converter(BigDecimal quantidadeInformada, UnidadeMedida unidadeInformada, UnidadeMedida unidadeInsumo) {
         if (!saoCompativeis(unidadeInformada, unidadeInsumo)) {
@@ -35,7 +37,7 @@ public class ConversaoUnidadeService {
     private BigDecimal aplicarFator(BigDecimal quantidade, UnidadeMedida origem, UnidadeMedida destino) {
         boolean origemMenor = origem == UnidadeMedida.G || origem == UnidadeMedida.ML;
         return origemMenor
-                ? quantidade.divide(FATOR_MILHAR)
+                ? quantidade.divide(FATOR_MILHAR, ESCALA_CONVERSAO, RoundingMode.HALF_EVEN)
                 : quantidade.multiply(FATOR_MILHAR);
     }
 

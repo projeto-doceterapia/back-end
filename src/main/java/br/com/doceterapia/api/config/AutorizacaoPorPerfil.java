@@ -29,7 +29,7 @@ public final class AutorizacaoPorPerfil {
     public static void registrar(
             AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry registry) {
         registry
-                .requestMatchers(parametroIgual(PARAMETRO_CONFIRMAR_COM_FALTA, "true")).hasRole(PAPEL_DONA)
+                .requestMatchers(parametroVerdadeiro(PARAMETRO_CONFIRMAR_COM_FALTA)).hasRole(PAPEL_DONA)
                 .requestMatchers(RequestMatchers.allOf(
                         PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.PATCH, "/pedidos/*/status"),
                         parametroIgual(PARAMETRO_STATUS_PEDIDO, STATUS_CANCELADO))).hasRole(PAPEL_DONA)
@@ -61,6 +61,18 @@ public final class AutorizacaoPorPerfil {
         return (HttpServletRequest request) -> {
             String[] valores = request.getParameterValues(nome);
             return valores != null && Arrays.stream(valores).anyMatch(v -> valor.equalsIgnoreCase(v.trim()));
+        };
+    }
+
+    private static RequestMatcher parametroVerdadeiro(String nome) {
+        return (HttpServletRequest request) -> {
+            String[] valores = request.getParameterValues(nome);
+            return valores != null && Arrays.stream(valores)
+                    .map(String::trim)
+                    .anyMatch(valor -> "true".equalsIgnoreCase(valor)
+                            || "1".equals(valor)
+                            || "yes".equalsIgnoreCase(valor)
+                            || "on".equalsIgnoreCase(valor));
         };
     }
 }

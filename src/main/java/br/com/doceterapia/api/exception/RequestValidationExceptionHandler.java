@@ -116,6 +116,14 @@ public class RequestValidationExceptionHandler {
                 .body(ErroResponseDTO.de(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request.getRequestURI()));
     }
 
+    @ExceptionHandler(InsumosInsuficientesException.class)
+    public ResponseEntity<ErroResponseDTO> handleInsumosInsuficientes(
+            InsumosInsuficientesException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.UNPROCESSABLE_ENTITY;
+        return ResponseEntity.status(status).body(new ErroResponseDTO(LocalDateTime.now(), status.value(),
+                status.getReasonPhrase(), ex.getMessage(), request.getRequestURI(), ex.getFaltas()));
+    }
+
     private ResponseEntity<ErroResponseDTO> erro(String message, HttpServletRequest request) {
         return ResponseEntity.badRequest()
                 .body(ErroResponseDTO.de(HttpStatus.BAD_REQUEST, message, request.getRequestURI()));

@@ -44,7 +44,9 @@ public interface ItemPedidoControllerOpenApi {
     ResponseEntity<ItemPedidoResponseDTO> cadastrarItemPedido(
             @RequestBody(description = "Dados do item de pedido a ser cadastrado", required = true,
                     content = @Content(schema = @Schema(implementation = ItemPedidoRequestDTO.class)))
-            ItemPedidoRequestDTO request);
+            ItemPedidoRequestDTO request,
+            @Parameter(description = "Permite à DONA gravar apesar das faltas de insumo", example = "false")
+            boolean confirmarComFalta);
 
     @Operation(summary = "Atualizar item de pedido",
             description = "Atualiza os dados de um item de pedido existente")
@@ -63,7 +65,9 @@ public interface ItemPedidoControllerOpenApi {
             Integer id,
             @RequestBody(description = "Novos dados do item de pedido", required = true,
                     content = @Content(schema = @Schema(implementation = ItemPedidoRequestDTO.class)))
-            ItemPedidoRequestDTO request);
+            ItemPedidoRequestDTO request,
+            @Parameter(description = "Permite à DONA gravar apesar das faltas de insumo", example = "false")
+            boolean confirmarComFalta);
 
     @Operation(summary = "Deletar item de pedido",
             description = "Remove um item de pedido do sistema")

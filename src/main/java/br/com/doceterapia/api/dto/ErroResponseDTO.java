@@ -3,10 +3,12 @@ package br.com.doceterapia.api.dto;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-public record ErroResponseDTO(LocalDateTime timestamp, int status, String error, String message, String path) {
+public record ErroResponseDTO(LocalDateTime timestamp, int status, String error, String message, String path,
+                              List<FaltaInsumoDTO> faltas) {
 
     public static ErroResponseDTO de(HttpStatus status, String message, String path) {
-        return new ErroResponseDTO(LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, path);
+        return new ErroResponseDTO(LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, path, null);
     }
 }

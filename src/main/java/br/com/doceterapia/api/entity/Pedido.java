@@ -54,6 +54,9 @@ public class Pedido {
     private LocalDateTime dataCriacao;
     private LocalDateTime dataConfirmacao;
 
+    @Column(name = "confirmado_com_falta_insumo", nullable = false)
+    private boolean confirmadoComFaltaInsumo;
+
     @PrePersist
     public void prePersist() {
         if (dataCriacao == null) dataCriacao = LocalDateTime.now();
@@ -139,6 +142,14 @@ public class Pedido {
 
     public void setDataConfirmacao(LocalDateTime dataConfirmacao) {
         this.dataConfirmacao = dataConfirmacao;
+    }
+
+    public boolean isConfirmadoComFaltaInsumo() {
+        return confirmadoComFaltaInsumo;
+    }
+
+    public void setConfirmadoComFaltaInsumo(boolean confirmadoComFaltaInsumo) {
+        this.confirmadoComFaltaInsumo = confirmadoComFaltaInsumo;
     }
 
     public String getCep() {
