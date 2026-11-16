@@ -178,6 +178,31 @@ public class MovimentacaoEstoqueService {
     }
 
     /**
+     * Records the aggregated withdrawal of one supply for an order starting production.
+     * It intentionally accepts an inactive supply only by rejecting the operation: an
+     * inactive catalog item must be corrected before it can be consumed again.
+     */
+    @Transactional
+    public MovimentacaoEstoque registrarSaidaProducao(Insumo insumo, BigDecimal quantidade, Integer pedidoId) {
+        if (quantidade == null || quantidade.signum() <= 0) {
+            throw new MovimentacaoInvalidaException("A quantidade da baixa deve ser maior que zero");
+        }
+        String chaveIdempotencia = "SAIDA_PRODUCAO:pedido:" + pedidoId + ":insumo:" + insumo.getIdInsumo();
+        Optional<MovimentacaoEstoque> existente = repository.findByChaveIdempotencia(chaveIdempotencia);
+        if (existente.isPresent()) {
+            return existente.get();
+        }
+        Insumo insumoAtual = carregarInsumoAtivoComLock(insumo.getIdInsumo());
+        BigDecimal quantidadeNegativa = quantidade.negate();
+        MovimentacaoEstoque movimentacao = montar(insumoAtual, TipoMovimentacao.SAIDA_PRODUCAO, quantidadeNegativa,
+                quantidadeNegativa, insumoAtual.getUnidade(), insumoAtual.getCustoUnitario(), OrigemMovimentacao.PRODUCAO,
+                null, "pedido:" + pedidoId, chaveIdempotencia,
+                calcularHashSaidaProducao(pedidoId, insumoAtual.getIdInsumo(), quantidadeNegativa), LocalDateTime.now());
+        aplicarMovimentacao(insumoAtual, movimentacao, null, insumoAtual.getQuantidadeMinima());
+        return movimentacao;
+    }
+
+    /**
      * The single place that mutates a supply balance. Holds a pessimistic
      * write lock on the supply row so concurrent movements never lose updates.
      */
@@ -288,6 +313,11 @@ public class MovimentacaoEstoqueService {
                 String.valueOf(tipo),
                 normalizar(quantidade));
         return sha256(canonico);
+    }
+
+    private String calcularHashSaidaProducao(Integer pedidoId, Integer insumoId, BigDecimal quantidade) {
+        return sha256(String.join("|", String.valueOf(pedidoId), String.valueOf(insumoId),
+                TipoMovimentacao.SAIDA_PRODUCAO.name(), normalizar(quantidade)));
     }
 
     private String normalizar(BigDecimal valor) {

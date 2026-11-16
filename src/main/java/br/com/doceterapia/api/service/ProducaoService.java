@@ -14,11 +14,7 @@ import br.com.doceterapia.api.exception.ProducaoStatusTransitionException;
 import br.com.doceterapia.api.mapper.ProducaoMapper;
 import br.com.doceterapia.api.repository.PedidoRepository;
 import br.com.doceterapia.api.repository.ProducaoRepository;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class ProducaoService {
@@ -26,18 +22,19 @@ public class ProducaoService {
     private final ProducaoRepository repository;
     private final ProducaoMapper mapper;
     private final PedidoRepository pedidoRepository;
+    private final PedidoService pedidoService;
 
-    private static final Map<StatusProducao, Set<StatusProducao>> TRANSICOES_VALIDAS = Map.of(
-            StatusProducao.ESPERANDO_FAZER, Set.of(StatusProducao.EM_PRODUCAO),
-            StatusProducao.EM_PRODUCAO, Set.of(StatusProducao.PRONTO_PARA_ENTREGA),
-            StatusProducao.PRONTO_PARA_ENTREGA, Set.of(StatusProducao.FINALIZADO),
-            StatusProducao.FINALIZADO, Set.of()
-    );
-
-    public ProducaoService(ProducaoRepository repository, ProducaoMapper mapper, PedidoRepository pedidoRepository) {
+    @Autowired
+    public ProducaoService(ProducaoRepository repository, ProducaoMapper mapper, PedidoRepository pedidoRepository,
+                           PedidoService pedidoService) {
         this.repository = repository;
         this.mapper = mapper;
         this.pedidoRepository = pedidoRepository;
+        this.pedidoService = pedidoService;
+    }
+
+    public ProducaoService(ProducaoRepository repository, ProducaoMapper mapper, PedidoRepository pedidoRepository) {
+        this(repository, mapper, pedidoRepository, null);
     }
 
     public ProducaoResponseDTO cadastrar(ProducaoRequestDTO request) {
@@ -93,28 +90,21 @@ public class ProducaoService {
     public ProducaoResponseDTO atualizarStatus(Integer id, StatusProducao novoStatus) {
         Producao entity = repository.findById(id)
                 .orElseThrow(ProducaoNotFoundException::new);
-
-        if (entity.getStatusProducao() == StatusProducao.FINALIZADO) {
-            throw new ProducaoFinalizedException("Produção finalizada não pode ter o status alterado");
-        }
-
-        Set<StatusProducao> transicoesPermitidas = TRANSICOES_VALIDAS.get(entity.getStatusProducao());
-        if (transicoesPermitidas == null || !transicoesPermitidas.contains(novoStatus)) {
+        if (pedidoService == null || novoStatus == StatusProducao.ESPERANDO_FAZER) {
             throw new ProducaoStatusTransitionException(
-                    "Transição de " + entity.getStatusProducao() + " para " + novoStatus + " não é permitida");
+                    "A produção só pode avançar pelas fases operacionais permitidas do pedido");
         }
+        pedidoService.atualizarStatus(entity.getPedido().getIdPedido(), statusPedido(novoStatus));
+        return mapper.toResponseDTO(repository.findById(id).orElseThrow(ProducaoNotFoundException::new));
+    }
 
-        entity.setStatusProducao(novoStatus);
-
-        if (novoStatus == StatusProducao.EM_PRODUCAO) {
-            entity.setDataInicio(LocalDate.now());
-        }
-
-        if (novoStatus == StatusProducao.FINALIZADO) {
-            entity.setDataFinalizacao(LocalDate.now());
-        }
-
-        repository.save(entity);
-        return mapper.toResponseDTO(entity);
+    private br.com.doceterapia.api.enums.StatusPedido statusPedido(StatusProducao status) {
+        return switch (status) {
+            case EM_PRODUCAO -> br.com.doceterapia.api.enums.StatusPedido.EM_PRODUCAO;
+            case PRONTO_PARA_ENTREGA -> br.com.doceterapia.api.enums.StatusPedido.AGUARDANDO_ENTREGA;
+            case FINALIZADO -> br.com.doceterapia.api.enums.StatusPedido.ENTREGUE;
+            case ESPERANDO_FAZER -> throw new ProducaoStatusTransitionException(
+                    "A produção só chega a aguardando fazer pelo registro do sinal");
+        };
     }
 }

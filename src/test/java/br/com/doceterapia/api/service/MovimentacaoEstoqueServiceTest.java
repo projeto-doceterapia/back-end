@@ -309,4 +309,39 @@ class MovimentacaoEstoqueServiceTest {
         verify(alertaEstoqueBaixoService).avaliar(
                 insumoKg, BigDecimal.valueOf(3), BigDecimal.valueOf(2), BigDecimal.valueOf(1));
     }
+
+    @Test
+    @DisplayName("SaÃ­da de produÃ§Ã£o preserva custo, atualiza saldo e avalia o mÃ­nimo")
+    void registrarSaidaProducaoAvaliaAlertaDeMinimo() {
+        insumoKg.setQuantidadeAtual(new BigDecimal("2.000"));
+        insumoKg.setQuantidadeMinima(new BigDecimal("1.500"));
+        insumoKg.setCustoUnitario(new BigDecimal("12.3456"));
+        when(repository.findByChaveIdempotencia("SAIDA_PRODUCAO:pedido:42:insumo:1")).thenReturn(Optional.empty());
+        when(entityManager.find(Insumo.class, 1)).thenReturn(insumoKg);
+
+        MovimentacaoEstoque movimentacao = service.registrarSaidaProducao(insumoKg, new BigDecimal("0.600"), 42);
+
+        assertEquals(TipoMovimentacao.SAIDA_PRODUCAO, movimentacao.getTipo());
+        assertEquals(OrigemMovimentacao.PRODUCAO, movimentacao.getOrigem());
+        assertEquals(new BigDecimal("-0.600"), movimentacao.getQuantidade());
+        assertEquals(new BigDecimal("12.3456"), movimentacao.getCustoUnitario());
+        assertEquals(0, new BigDecimal("1.400").compareTo(insumoKg.getQuantidadeAtual()));
+        verify(alertaEstoqueBaixoService).avaliar(insumoKg, new BigDecimal("2.000"),
+                new BigDecimal("1.500"), new BigDecimal("1.400"));
+    }
+
+    @Test
+    @DisplayName("SaÃ­da de produÃ§Ã£o repetida nÃ£o altera novamente o saldo")
+    void registrarSaidaProducaoRepetidaNaoAlteraSaldo() {
+        MovimentacaoEstoque existente = new MovimentacaoEstoque();
+        existente.setQuantidade(new BigDecimal("-0.600"));
+        when(repository.findByChaveIdempotencia("SAIDA_PRODUCAO:pedido:42:insumo:1"))
+                .thenReturn(Optional.of(existente));
+
+        MovimentacaoEstoque resultado = service.registrarSaidaProducao(insumoKg, new BigDecimal("0.600"), 42);
+
+        assertEquals(existente, resultado);
+        assertEquals(BigDecimal.ZERO, insumoKg.getQuantidadeAtual());
+        verify(repository, never()).saveAndFlush(any());
+    }
 }

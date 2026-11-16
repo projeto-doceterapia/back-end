@@ -3,12 +3,15 @@ package br.com.doceterapia.api.service;
 import br.com.doceterapia.api.dto.PedidoRequestDTO;
 import br.com.doceterapia.api.dto.PedidoResponseDTO;
 import br.com.doceterapia.api.entity.Pedido;
+import br.com.doceterapia.api.entity.Producao;
+import br.com.doceterapia.api.enums.StatusProducao;
 import br.com.doceterapia.api.enums.StatusPedido;
 import br.com.doceterapia.api.enums.TipoPedido;
 import br.com.doceterapia.api.exception.DataEntregaNoPassadoException;
 import br.com.doceterapia.api.exception.StatusTransitionInvalidException;
 import br.com.doceterapia.api.mapper.PedidoMapper;
 import br.com.doceterapia.api.repository.PedidoRepository;
+import br.com.doceterapia.api.repository.ProducaoRepository;
 import br.com.doceterapia.api.service.notificacao.AlertaDiaLotadoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +24,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -118,5 +122,51 @@ class PedidoServiceTest {
                 () -> pedidoService.atualizarStatus(1, StatusPedido.ESPERANDO_FAZER));
 
         verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    @Test
+    @DisplayName("Iniciar produÃ§Ã£o baixa insumos e reflete uma produÃ§Ã£o existente")
+    void deveBaixarERefletirStatusNaProducao() {
+        BaixaProducaoService baixaProducaoService = org.mockito.Mockito.mock(BaixaProducaoService.class);
+        ProducaoRepository producaoRepository = org.mockito.Mockito.mock(ProducaoRepository.class);
+        PedidoService service = new PedidoService(pedidoRepository, pedidoMapper, pagamentoService,
+                alertaDiaLotadoService, new MaquinaStatusPedido(), bloqueioPedidoService, CLOCK,
+                null, null, baixaProducaoService, producaoRepository);
+        Producao producao = new Producao();
+        producao.setPedido(pedido);
+        producao.setStatusProducao(StatusProducao.ESPERANDO_FAZER);
+        PedidoResponseDTO response = new PedidoResponseDTO();
+        pedido.setTipoPedido(TipoPedido.PEDIDO_CONFIRMADO);
+        pedido.setStatusPedido(StatusPedido.ESPERANDO_FAZER);
+        when(bloqueioPedidoService.buscar(1)).thenReturn(pedido);
+        when(producaoRepository.findByPedidoIdPedido(1)).thenReturn(Optional.of(producao));
+        when(pedidoMapper.toPedidoResponse(pedido)).thenReturn(response);
+
+        service.atualizarStatus(1, StatusPedido.EM_PRODUCAO);
+
+        verify(baixaProducaoService).baixarInsumos(pedido);
+        assertEquals(StatusPedido.EM_PRODUCAO, pedido.getStatusPedido());
+        assertEquals(StatusProducao.EM_PRODUCAO, producao.getStatusProducao());
+        assertEquals(LocalDate.now(CLOCK), producao.getDataInicio());
+        verify(producaoRepository).save(producao);
+    }
+
+    @Test
+    @DisplayName("Falha na baixa preserva o status anterior do pedido")
+    void falhaNaBaixaNaoMudaStatus() {
+        BaixaProducaoService baixaProducaoService = org.mockito.Mockito.mock(BaixaProducaoService.class);
+        PedidoService service = new PedidoService(pedidoRepository, pedidoMapper, pagamentoService,
+                alertaDiaLotadoService, new MaquinaStatusPedido(), bloqueioPedidoService, CLOCK,
+                null, null, baixaProducaoService, null);
+        pedido.setTipoPedido(TipoPedido.PEDIDO_CONFIRMADO);
+        pedido.setStatusPedido(StatusPedido.ESPERANDO_FAZER);
+        when(bloqueioPedidoService.buscar(1)).thenReturn(pedido);
+        org.mockito.Mockito.doThrow(new IllegalStateException("Falha fictÃ­cia"))
+                .when(baixaProducaoService).baixarInsumos(pedido);
+
+        assertThrows(IllegalStateException.class, () -> service.atualizarStatus(1, StatusPedido.EM_PRODUCAO));
+
+        assertEquals(StatusPedido.ESPERANDO_FAZER, pedido.getStatusPedido());
+        verify(pedidoRepository, never()).save(pedido);
     }
 }

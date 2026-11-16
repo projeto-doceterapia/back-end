@@ -5,6 +5,7 @@ import br.com.doceterapia.api.dto.PedidoResponseDTO;
 import br.com.doceterapia.api.entity.Pedido;
 import br.com.doceterapia.api.enums.FormaEntrega;
 import br.com.doceterapia.api.enums.StatusPedido;
+import br.com.doceterapia.api.enums.StatusProducao;
 import br.com.doceterapia.api.enums.TipoPedido;
 import br.com.doceterapia.api.exception.DataEntregaNoPassadoException;
 import br.com.doceterapia.api.exception.PedidoIdDontExistsException;
@@ -12,6 +13,7 @@ import br.com.doceterapia.api.exception.StatusTransitionInvalidException;
 import br.com.doceterapia.api.mapper.PedidoMapper;
 import br.com.doceterapia.api.repository.PedidoRepository;
 import br.com.doceterapia.api.repository.ItemPedidoRepository;
+import br.com.doceterapia.api.repository.ProducaoRepository;
 import br.com.doceterapia.api.service.notificacao.AlertaDiaLotadoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -37,12 +39,15 @@ public class PedidoService {
     private final Clock clock;
     private final ItemPedidoRepository itemPedidoRepository;
     private final ViabilidadeInsumoService viabilidadeInsumoService;
+    private final BaixaProducaoService baixaProducaoService;
+    private final ProducaoRepository producaoRepository;
 
     @Autowired
     public PedidoService(PedidoRepository repository, PedidoMapper mapper, PagamentoService pagamentoService,
                          AlertaDiaLotadoService alertaDiaLotadoService, MaquinaStatusPedido maquinaStatusPedido,
                          BloqueioPedidoService bloqueioPedidoService, Clock clock, ItemPedidoRepository itemPedidoRepository,
-                         ViabilidadeInsumoService viabilidadeInsumoService) {
+                         ViabilidadeInsumoService viabilidadeInsumoService, BaixaProducaoService baixaProducaoService,
+                         ProducaoRepository producaoRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.pagamentoService = pagamentoService;
@@ -52,13 +57,15 @@ public class PedidoService {
         this.clock = clock;
         this.itemPedidoRepository = itemPedidoRepository;
         this.viabilidadeInsumoService = viabilidadeInsumoService;
+        this.baixaProducaoService = baixaProducaoService;
+        this.producaoRepository = producaoRepository;
     }
 
     public PedidoService(PedidoRepository repository, PedidoMapper mapper, PagamentoService pagamentoService,
                          AlertaDiaLotadoService alertaDiaLotadoService, MaquinaStatusPedido maquinaStatusPedido,
                          BloqueioPedidoService bloqueioPedidoService, Clock clock) {
         this(repository, mapper, pagamentoService, alertaDiaLotadoService, maquinaStatusPedido, bloqueioPedidoService,
-                clock, null, null);
+                clock, null, null, null, null);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -128,6 +135,9 @@ public class PedidoService {
             viabilidadeInsumoService.exigirViabilidade(pedido, itemPedidoRepository.findByPedidoIdPedido(id),
                     confirmarComFalta, "Faltam insumos para confirmar o pedido.");
         }
+        if (novoStatus == StatusPedido.EM_PRODUCAO && baixaProducaoService != null) {
+            baixaProducaoService.baixarInsumos(pedido);
+        }
         pedido.setStatusPedido(novoStatus);
         if (novoStatus == StatusPedido.AGUARDANDO_SINAL) {
             pedido.setTipoPedido(TipoPedido.PEDIDO_CONFIRMADO);
@@ -135,7 +145,32 @@ public class PedidoService {
             pagamentoService.criar(pedido);
         }
         repository.save(pedido);
+        refletirStatusNaProducao(pedido, novoStatus);
         return mapper.toPedidoResponse(pedido);
+    }
+
+    private void refletirStatusNaProducao(Pedido pedido, StatusPedido statusPedido) {
+        if (producaoRepository == null || statusPedido == StatusPedido.CANCELADO) {
+            return;
+        }
+        producaoRepository.findByPedidoIdPedido(pedido.getIdPedido()).ifPresent(producao -> {
+            switch (statusPedido) {
+                case ESPERANDO_FAZER -> producao.setStatusProducao(StatusProducao.ESPERANDO_FAZER);
+                case EM_PRODUCAO -> {
+                    producao.setStatusProducao(StatusProducao.EM_PRODUCAO);
+                    producao.setDataInicio(LocalDate.now(clock));
+                }
+                case AGUARDANDO_ENTREGA -> producao.setStatusProducao(StatusProducao.PRONTO_PARA_ENTREGA);
+                case ENTREGUE -> {
+                    producao.setStatusProducao(StatusProducao.FINALIZADO);
+                    producao.setDataFinalizacao(LocalDate.now(clock));
+                }
+                default -> {
+                    return;
+                }
+            }
+            producaoRepository.save(producao);
+        });
     }
 
     private void configurarEstadoInicial(Pedido pedido, StatusPedido statusSolicitado) {
