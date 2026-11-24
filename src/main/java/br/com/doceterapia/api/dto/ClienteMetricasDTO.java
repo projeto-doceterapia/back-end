@@ -10,4 +10,8 @@ public record ClienteMetricasDTO(Integer idCliente, long totalPedidos, BigDecima
             gastoTotal = BigDecimal.ZERO;
         }
     }
+
+    public ClienteMetricasDTO(Integer idCliente, long totalPedidos, LocalDate ultimoPedido) {
+        this(idCliente, totalPedidos, null, ultimoPedido);
+    }
 }

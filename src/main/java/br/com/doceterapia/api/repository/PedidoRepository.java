@@ -30,14 +30,25 @@ public interface PedidoRepository extends JpaRepository<Pedido, Integer> {
 
     List<Pedido> findByStatusPedido(StatusPedido statusPedido);
 
-    // Quotes and cancelled orders are not sales, so they stay out of the client totals.
+    // Quotes and cancelled orders are not sales, so they stay out of the client totals. Filtering by the listed
+    // clients lets the database reach their orders through the client foreign key instead of reading every order.
     @Query("SELECT new br.com.doceterapia.api.dto.ClienteMetricasDTO(p.cliente.idCliente, COUNT(DISTINCT p.idPedido), "
             + "SUM(i.valorTotal), MAX(p.dataEntrega)) "
             + "FROM Pedido p LEFT JOIN ItemPedido i ON i.pedido = p "
-            + "WHERE p.statusPedido NOT IN (br.com.doceterapia.api.enums.StatusPedido.CANCELADO, "
+            + "WHERE p.cliente.idCliente IN :clienteIds "
+            + "AND p.statusPedido NOT IN (br.com.doceterapia.api.enums.StatusPedido.CANCELADO, "
             + "br.com.doceterapia.api.enums.StatusPedido.ORCAMENTO) "
             + "GROUP BY p.cliente.idCliente")
-    List<ClienteMetricasDTO> resumirPorCliente();
+    List<ClienteMetricasDTO> resumirPorClientes(@Param("clienteIds") Collection<Integer> clienteIds);
+
+    // Same totals without the item sum, for profiles that never see the spending: skips the join with the items.
+    @Query("SELECT new br.com.doceterapia.api.dto.ClienteMetricasDTO(p.cliente.idCliente, COUNT(p), MAX(p.dataEntrega)) "
+            + "FROM Pedido p "
+            + "WHERE p.cliente.idCliente IN :clienteIds "
+            + "AND p.statusPedido NOT IN (br.com.doceterapia.api.enums.StatusPedido.CANCELADO, "
+            + "br.com.doceterapia.api.enums.StatusPedido.ORCAMENTO) "
+            + "GROUP BY p.cliente.idCliente")
+    List<ClienteMetricasDTO> contarPorClientes(@Param("clienteIds") Collection<Integer> clienteIds);
 
     @Query("SELECT p FROM Pedido p WHERE p.dataEntrega = :dataEntrega "
             + "AND p.statusPedido NOT IN (br.com.doceterapia.api.enums.StatusPedido.ENTREGUE, "

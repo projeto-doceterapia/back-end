@@ -13,13 +13,14 @@ import br.com.doceterapia.api.mapper.ClienteMapper;
 import br.com.doceterapia.api.repository.ClienteRepository;
 import br.com.doceterapia.api.repository.PedidoRepository;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 public class ClienteService {
+
+    private static final int LOTE_CLIENTES_RESUMO = 1000;
 
     private final ClienteRepository repository;
     private final PedidoRepository pedidoRepository;
@@ -38,17 +39,31 @@ public class ClienteService {
     }
 
     public List<ClienteResumoResponseDTO> resumir(String busca, boolean incluirInativos, boolean incluirGasto) {
-        List<Cliente> clientes = (busca == null || busca.isBlank())
+        List<Cliente> clientes = ((busca == null || busca.isBlank())
                 ? repository.findAll(Sort.by("nome"))
-                : repository.buscar(busca.trim(), somenteDigitos(busca));
-        Map<Integer, ClienteMetricasDTO> metricas = pedidoRepository.resumirPorCliente().stream()
-                .collect(Collectors.toMap(ClienteMetricasDTO::idCliente, Function.identity()));
+                : repository.buscar(busca.trim(), somenteDigitos(busca))).stream()
+                .filter(cliente -> incluirInativos || cliente.getStatus() != StatusAtivo.INATIVO)
+                .toList();
+        Map<Integer, ClienteMetricasDTO> metricas = metricasDosClientes(clientes, incluirGasto);
 
         return clientes.stream()
-                .filter(cliente -> incluirInativos || cliente.getStatus() != StatusAtivo.INATIVO)
                 .map(cliente -> ClienteMapper.toClienteResumoResponse(
                         cliente, metricas.get(cliente.getIdCliente()), incluirGasto))
                 .toList();
+    }
+
+    // Batches keep the IN list of the aggregate query bounded however many clients the list has.
+    private Map<Integer, ClienteMetricasDTO> metricasDosClientes(List<Cliente> clientes, boolean incluirGasto) {
+        List<Integer> ids = clientes.stream().map(Cliente::getIdCliente).toList();
+        Map<Integer, ClienteMetricasDTO> metricas = new HashMap<>();
+        for (int inicio = 0; inicio < ids.size(); inicio += LOTE_CLIENTES_RESUMO) {
+            List<Integer> lote = ids.subList(inicio, Math.min(inicio + LOTE_CLIENTES_RESUMO, ids.size()));
+            List<ClienteMetricasDTO> parcial = incluirGasto
+                    ? pedidoRepository.resumirPorClientes(lote)
+                    : pedidoRepository.contarPorClientes(lote);
+            parcial.forEach(item -> metricas.put(item.idCliente(), item));
+        }
+        return metricas;
     }
 
     public Cliente cadastrar(ClienteRequestDTO request) {
