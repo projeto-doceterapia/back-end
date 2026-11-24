@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -302,7 +303,7 @@ class ClienteServiceTest {
         semPedidos.setNome("Outra Pessoa");
         semPedidos.setStatus(StatusAtivo.ATIVO);
         when(clienteRepository.findAll(Sort.by("nome"))).thenReturn(List.of(cliente, semPedidos));
-        when(pedidoRepository.resumirPorCliente()).thenReturn(List.of(
+        when(pedidoRepository.resumirPorClientes(List.of(1, 2))).thenReturn(List.of(
                 new ClienteMetricasDTO(1, 2, new BigDecimal("150.50"), LocalDate.of(2026, 10, 28))));
 
         // Act
@@ -323,8 +324,8 @@ class ClienteServiceTest {
     void resumoOcultaGastoParaFuncionaria() {
         // Arrange
         when(clienteRepository.findAll(Sort.by("nome"))).thenReturn(List.of(cliente));
-        when(pedidoRepository.resumirPorCliente()).thenReturn(List.of(
-                new ClienteMetricasDTO(1, 1, new BigDecimal("80.00"), LocalDate.of(2026, 10, 1))));
+        when(pedidoRepository.contarPorClientes(List.of(1))).thenReturn(List.of(
+                new ClienteMetricasDTO(1, 1, LocalDate.of(2026, 10, 1))));
 
         // Act
         List<ClienteResumoResponseDTO> resumo = clienteService.resumir(null, false, false);
@@ -332,6 +333,7 @@ class ClienteServiceTest {
         // Assert
         assertNull(resumo.get(0).gastoTotal());
         assertEquals(1, resumo.get(0).totalPedidos());
+        verify(pedidoRepository, never()).resumirPorClientes(any());
     }
 
     @Test
@@ -343,7 +345,8 @@ class ClienteServiceTest {
         inativo.setNome("Cliente Inativo");
         inativo.setStatus(StatusAtivo.INATIVO);
         when(clienteRepository.findAll(Sort.by("nome"))).thenReturn(List.of(cliente, inativo));
-        when(pedidoRepository.resumirPorCliente()).thenReturn(List.of());
+        when(pedidoRepository.resumirPorClientes(List.of(1))).thenReturn(List.of());
+        when(pedidoRepository.resumirPorClientes(List.of(1, 3))).thenReturn(List.of());
 
         // Act
         List<ClienteResumoResponseDTO> padrao = clienteService.resumir(null, false, true);
@@ -359,7 +362,7 @@ class ClienteServiceTest {
     void resumoComBuscaUsaConsultaDeBusca() {
         // Arrange
         when(clienteRepository.buscar("joão", "")).thenReturn(List.of(cliente));
-        when(pedidoRepository.resumirPorCliente()).thenReturn(List.of());
+        when(pedidoRepository.resumirPorClientes(List.of(1))).thenReturn(List.of());
 
         // Act
         List<ClienteResumoResponseDTO> resumo = clienteService.resumir("joão", false, true);
@@ -367,6 +370,46 @@ class ClienteServiceTest {
         // Assert
         assertEquals(1, resumo.size());
         verify(clienteRepository, never()).findAll(any(Sort.class));
+    }
+
+    @Test
+    @DisplayName("Resumo sem clientes não consulta os pedidos")
+    void resumoSemClientesNaoConsultaPedidos() {
+        // Arrange
+        when(clienteRepository.buscar("ninguém", "")).thenReturn(List.of());
+
+        // Act
+        List<ClienteResumoResponseDTO> resumo = clienteService.resumir("ninguém", false, true);
+
+        // Assert
+        assertTrue(resumo.isEmpty());
+        verifyNoInteractions(pedidoRepository);
+    }
+
+    @Test
+    @DisplayName("Resumo agrega os clientes em lotes de até 1000 ids")
+    void resumoAgregaEmLotes() {
+        // Arrange
+        List<Cliente> clientes = new ArrayList<>();
+        for (int id = 1; id <= 1001; id++) {
+            Cliente item = new Cliente();
+            item.setIdCliente(id);
+            item.setNome("Cliente " + id);
+            item.setStatus(StatusAtivo.ATIVO);
+            clientes.add(item);
+        }
+        when(clienteRepository.findAll(Sort.by("nome"))).thenReturn(clientes);
+        when(pedidoRepository.resumirPorClientes(any())).thenReturn(List.of());
+        when(pedidoRepository.resumirPorClientes(List.of(1001))).thenReturn(List.of(
+                new ClienteMetricasDTO(1001, 4, new BigDecimal("20.00"), LocalDate.of(2026, 11, 1))));
+
+        // Act
+        List<ClienteResumoResponseDTO> resumo = clienteService.resumir(null, false, true);
+
+        // Assert
+        assertEquals(1001, resumo.size());
+        assertEquals(4, resumo.get(1000).totalPedidos());
+        verify(pedidoRepository, times(2)).resumirPorClientes(any());
     }
 
     @Test

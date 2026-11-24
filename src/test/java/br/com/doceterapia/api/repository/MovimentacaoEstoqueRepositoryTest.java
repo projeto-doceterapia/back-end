@@ -7,6 +7,9 @@ import br.com.doceterapia.api.enums.OrigemMovimentacao;
 import br.com.doceterapia.api.enums.StatusAtivo;
 import br.com.doceterapia.api.enums.TipoMovimentacao;
 import br.com.doceterapia.api.enums.UnidadeMedida;
+import jakarta.persistence.EntityManager;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,6 +37,9 @@ class MovimentacaoEstoqueRepositoryTest {
 
     @Autowired
     private CategoriaInsumoRepository categoriaInsumoRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private Insumo insumo;
 
@@ -140,6 +147,37 @@ class MovimentacaoEstoqueRepositoryTest {
 
         assertEquals(2, repository.buscarPorPeriodo(null, inicio, fim).size());
         assertEquals(1, repository.buscarPorPeriodo(insumo.getIdInsumo(), inicio, fim).size());
+    }
+
+    @Test
+    @DisplayName("A busca por período traz insumo e categoria numa única consulta")
+    void buscarPorPeriodoEmUmaConsulta() {
+        Insumo outro = new Insumo();
+        outro.setCategoria(insumo.getCategoria());
+        outro.setNome("Açúcar refinado");
+        outro.setQuantidadeAtual(BigDecimal.ZERO);
+        outro.setQuantidadeMinima(BigDecimal.ZERO);
+        outro.setUnidade(UnidadeMedida.KG);
+        outro.setStatus(StatusAtivo.ATIVO);
+        outro = insumoRepository.save(outro);
+        LocalDateTime ocorrido = LocalDateTime.of(2026, 11, 10, 9, 0);
+        MovimentacaoEstoque doInsumo = novaMovimentacao("periodo-1", null);
+        doInsumo.setOcorridoEm(ocorrido);
+        MovimentacaoEstoque doOutro = novaMovimentacao("periodo-2", null);
+        doOutro.setInsumo(outro);
+        doOutro.setOcorridoEm(ocorrido);
+        repository.saveAllAndFlush(List.of(doInsumo, doOutro));
+        entityManager.clear();
+        Statistics estatisticas = entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();
+        estatisticas.setStatisticsEnabled(true);
+        estatisticas.clear();
+
+        List<MovimentacaoEstoque> encontradas = repository.buscarPorPeriodo(null,
+                ocorrido.minusDays(1), ocorrido.plusDays(1));
+        encontradas.forEach(movimentacao -> movimentacao.getInsumo().getCategoria().getNome());
+
+        assertEquals(2, encontradas.size());
+        assertEquals(1, estatisticas.getPrepareStatementCount());
     }
 
     private void salvarEm(String chave, LocalDateTime ocorridoEm) {

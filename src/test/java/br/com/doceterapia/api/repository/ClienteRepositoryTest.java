@@ -136,7 +136,7 @@ class ClienteRepositoryTest {
         novoPedido(exemplo, StatusPedido.CANCELADO, LocalDate.of(2026, 10, 28), "500.00");
         novoPedido(exemplo, StatusPedido.ORCAMENTO, LocalDate.of(2026, 11, 5), "300.00");
 
-        List<ClienteMetricasDTO> resumo = pedidoRepository.resumirPorCliente();
+        List<ClienteMetricasDTO> resumo = pedidoRepository.resumirPorClientes(idsDosClientes());
 
         assertEquals(1, resumo.size());
         ClienteMetricasDTO metricas = resumo.get(0);
@@ -151,7 +151,7 @@ class ClienteRepositoryTest {
     void resumoPedidoSemItens() {
         novoPedido(outra, StatusPedido.ENTREGUE, LocalDate.of(2026, 10, 1));
 
-        ClienteMetricasDTO metricas = pedidoRepository.resumirPorCliente().get(0);
+        ClienteMetricasDTO metricas = pedidoRepository.resumirPorClientes(idsDosClientes()).get(0);
 
         assertEquals(1, metricas.totalPedidos());
         assertEquals(0, BigDecimal.ZERO.compareTo(metricas.gastoTotal()));
@@ -160,7 +160,46 @@ class ClienteRepositoryTest {
     @Test
     @DisplayName("Cliente sem pedido não aparece nas métricas")
     void resumoClienteSemPedido() {
-        assertTrue(pedidoRepository.resumirPorCliente().isEmpty());
+        assertTrue(pedidoRepository.resumirPorClientes(idsDosClientes()).isEmpty());
         assertNull(clienteRepository.findById(exemplo.getIdCliente()).orElseThrow().getCep());
+    }
+
+    @Test
+    @DisplayName("O resumo só agrega os clientes pedidos")
+    void resumoSoAgregaClientesPedidos() {
+        novoPedido(exemplo, StatusPedido.ENTREGUE, LocalDate.of(2026, 10, 1), "60.00");
+        novoPedido(outra, StatusPedido.ENTREGUE, LocalDate.of(2026, 10, 2), "30.00");
+
+        List<ClienteMetricasDTO> resumo = pedidoRepository.resumirPorClientes(List.of(outra.getIdCliente()));
+
+        assertEquals(1, resumo.size());
+        assertEquals(outra.getIdCliente(), resumo.get(0).idCliente());
+        assertEquals(0, new BigDecimal("30.00").compareTo(resumo.get(0).gastoTotal()));
+    }
+
+    @Test
+    @DisplayName("A contagem sem gasto traz os mesmos pedidos e a mesma última entrega do resumo")
+    void contagemIgualAoResumoSemGasto() {
+        novoPedido(exemplo, StatusPedido.ENTREGUE, LocalDate.of(2026, 10, 1), "60.00", "40.50");
+        novoPedido(exemplo, StatusPedido.AGUARDANDO_SINAL, LocalDate.of(2026, 10, 20), "10.00");
+        novoPedido(exemplo, StatusPedido.CANCELADO, LocalDate.of(2026, 10, 28), "500.00");
+        novoPedido(exemplo, StatusPedido.ORCAMENTO, LocalDate.of(2026, 11, 5), "300.00");
+        novoPedido(outra, StatusPedido.ENTREGUE, LocalDate.of(2026, 10, 3));
+
+        List<ClienteMetricasDTO> completo = pedidoRepository.resumirPorClientes(idsDosClientes());
+        List<ClienteMetricasDTO> contagem = pedidoRepository.contarPorClientes(idsDosClientes());
+
+        assertEquals(completo.size(), contagem.size());
+        for (ClienteMetricasDTO esperado : completo) {
+            ClienteMetricasDTO obtido = contagem.stream()
+                    .filter(item -> item.idCliente().equals(esperado.idCliente())).findFirst().orElseThrow();
+            assertEquals(esperado.totalPedidos(), obtido.totalPedidos());
+            assertEquals(esperado.ultimoPedido(), obtido.ultimoPedido());
+            assertEquals(0, BigDecimal.ZERO.compareTo(obtido.gastoTotal()));
+        }
+    }
+
+    private List<Integer> idsDosClientes() {
+        return List.of(exemplo.getIdCliente(), outra.getIdCliente());
     }
 }
