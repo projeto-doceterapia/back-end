@@ -1,5 +1,6 @@
 package br.com.doceterapia.api.repository;
 
+import br.com.doceterapia.api.dto.ClienteContagemDTO;
 import br.com.doceterapia.api.dto.ClienteMetricasDTO;
 import br.com.doceterapia.api.entity.CategoriaProduto;
 import br.com.doceterapia.api.entity.Cliente;
@@ -187,15 +188,13 @@ class ClienteRepositoryTest {
         novoPedido(outra, StatusPedido.ENTREGUE, LocalDate.of(2026, 10, 3));
 
         List<ClienteMetricasDTO> completo = pedidoRepository.resumirPorClientes(idsDosClientes());
-        List<ClienteMetricasDTO> contagem = pedidoRepository.contarPorClientes(idsDosClientes());
+        List<ClienteContagemDTO> contagem = pedidoRepository.contarPorClientes(idsDosClientes());
 
         assertEquals(completo.size(), contagem.size());
         for (ClienteMetricasDTO esperado : completo) {
-            ClienteMetricasDTO obtido = contagem.stream()
+            ClienteContagemDTO obtido = contagem.stream()
                     .filter(item -> item.idCliente().equals(esperado.idCliente())).findFirst().orElseThrow();
-            assertEquals(esperado.totalPedidos(), obtido.totalPedidos());
-            assertEquals(esperado.ultimoPedido(), obtido.ultimoPedido());
-            assertEquals(0, BigDecimal.ZERO.compareTo(obtido.gastoTotal()));
+            assertEquals(esperado.contagem(), obtido);
         }
     }
 

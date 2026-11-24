@@ -11,7 +11,7 @@ public record ClienteMetricasDTO(Integer idCliente, long totalPedidos, BigDecima
         }
     }
 
-    public ClienteMetricasDTO(Integer idCliente, long totalPedidos, LocalDate ultimoPedido) {
-        this(idCliente, totalPedidos, null, ultimoPedido);
+    public ClienteContagemDTO contagem() {
+        return new ClienteContagemDTO(idCliente, totalPedidos, ultimoPedido);
     }
 }

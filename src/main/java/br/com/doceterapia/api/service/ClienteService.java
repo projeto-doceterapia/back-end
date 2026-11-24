@@ -2,6 +2,7 @@ package br.com.doceterapia.api.service;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import br.com.doceterapia.api.dto.ClienteContagemDTO;
 import br.com.doceterapia.api.dto.ClienteMetricasDTO;
 import br.com.doceterapia.api.dto.ClienteRequestDTO;
 import br.com.doceterapia.api.dto.ClienteResumoResponseDTO;
@@ -13,6 +14,7 @@ import br.com.doceterapia.api.mapper.ClienteMapper;
 import br.com.doceterapia.api.repository.ClienteRepository;
 import br.com.doceterapia.api.repository.PedidoRepository;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,26 +46,32 @@ public class ClienteService {
                 : repository.buscar(busca.trim(), somenteDigitos(busca))).stream()
                 .filter(cliente -> incluirInativos || cliente.getStatus() != StatusAtivo.INATIVO)
                 .toList();
-        Map<Integer, ClienteMetricasDTO> metricas = metricasDosClientes(clientes, incluirGasto);
+        Map<Integer, ClienteContagemDTO> contagens = new HashMap<>();
+        Map<Integer, BigDecimal> gastos = new HashMap<>();
+        agregarPedidos(clientes, incluirGasto, contagens, gastos);
 
         return clientes.stream()
-                .map(cliente -> ClienteMapper.toClienteResumoResponse(
-                        cliente, metricas.get(cliente.getIdCliente()), incluirGasto))
+                .map(cliente -> ClienteMapper.toClienteResumoResponse(cliente, contagens.get(cliente.getIdCliente()),
+                        incluirGasto ? gastos.getOrDefault(cliente.getIdCliente(), BigDecimal.ZERO) : null))
                 .toList();
     }
 
-    // Batches keep the IN list of the aggregate query bounded however many clients the list has.
-    private Map<Integer, ClienteMetricasDTO> metricasDosClientes(List<Cliente> clientes, boolean incluirGasto) {
+    // Batches keep the IN list of the aggregate query bounded however many clients the list has. Without the
+    // spending only the counts are queried, so no spending value exists to leak.
+    private void agregarPedidos(List<Cliente> clientes, boolean incluirGasto,
+                                Map<Integer, ClienteContagemDTO> contagens, Map<Integer, BigDecimal> gastos) {
         List<Integer> ids = clientes.stream().map(Cliente::getIdCliente).toList();
-        Map<Integer, ClienteMetricasDTO> metricas = new HashMap<>();
         for (int inicio = 0; inicio < ids.size(); inicio += LOTE_CLIENTES_RESUMO) {
             List<Integer> lote = ids.subList(inicio, Math.min(inicio + LOTE_CLIENTES_RESUMO, ids.size()));
-            List<ClienteMetricasDTO> parcial = incluirGasto
-                    ? pedidoRepository.resumirPorClientes(lote)
-                    : pedidoRepository.contarPorClientes(lote);
-            parcial.forEach(item -> metricas.put(item.idCliente(), item));
+            if (incluirGasto) {
+                for (ClienteMetricasDTO metricas : pedidoRepository.resumirPorClientes(lote)) {
+                    contagens.put(metricas.idCliente(), metricas.contagem());
+                    gastos.put(metricas.idCliente(), metricas.gastoTotal());
+                }
+            } else {
+                pedidoRepository.contarPorClientes(lote).forEach(item -> contagens.put(item.idCliente(), item));
+            }
         }
-        return metricas;
     }
 
     public Cliente cadastrar(ClienteRequestDTO request) {

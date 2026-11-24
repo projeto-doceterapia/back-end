@@ -8,6 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import br.com.doceterapia.api.dto.ClienteContagemDTO;
 import br.com.doceterapia.api.dto.ClienteMetricasDTO;
 import br.com.doceterapia.api.dto.ClienteRequestDTO;
 import br.com.doceterapia.api.dto.ClienteResumoResponseDTO;
@@ -325,7 +326,7 @@ class ClienteServiceTest {
         // Arrange
         when(clienteRepository.findAll(Sort.by("nome"))).thenReturn(List.of(cliente));
         when(pedidoRepository.contarPorClientes(List.of(1))).thenReturn(List.of(
-                new ClienteMetricasDTO(1, 1, LocalDate.of(2026, 10, 1))));
+                new ClienteContagemDTO(1, 1, LocalDate.of(2026, 10, 1))));
 
         // Act
         List<ClienteResumoResponseDTO> resumo = clienteService.resumir(null, false, false);
