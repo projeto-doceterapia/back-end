@@ -21,10 +21,13 @@ public interface MovimentacaoEstoqueRepository extends JpaRepository<Movimentaca
     @Query("SELECT DISTINCT m.insumo.idInsumo FROM MovimentacaoEstoque m WHERE m.chaveNota = :chaveNota ORDER BY m.insumo.idInsumo")
     List<Integer> findInsumoIdsByChaveNota(@Param("chaveNota") String chaveNota);
 
+    // Fetches the supply and its category in the same statement; loading them per row issued one query per supply.
     @Query("""
             SELECT m FROM MovimentacaoEstoque m
+            JOIN FETCH m.insumo i
+            LEFT JOIN FETCH i.categoria
             WHERE m.ocorridoEm >= :inicio AND m.ocorridoEm < :fimExclusivo
-              AND (:insumoId IS NULL OR m.insumo.idInsumo = :insumoId)
+              AND (:insumoId IS NULL OR i.idInsumo = :insumoId)
             ORDER BY m.ocorridoEm DESC, m.idMovimentacao DESC
             """)
     List<MovimentacaoEstoque> buscarPorPeriodo(@Param("insumoId") Integer insumoId,
