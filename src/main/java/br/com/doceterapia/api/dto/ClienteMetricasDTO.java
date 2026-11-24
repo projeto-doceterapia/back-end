@@ -10,4 +10,8 @@ public record ClienteMetricasDTO(Integer idCliente, long totalPedidos, BigDecima
             gastoTotal = BigDecimal.ZERO;
         }
     }
+
+    public ClienteContagemDTO contagem() {
+        return new ClienteContagemDTO(idCliente, totalPedidos, ultimoPedido);
+    }
 }

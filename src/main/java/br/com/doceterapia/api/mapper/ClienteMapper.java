@@ -1,7 +1,7 @@
 package br.com.doceterapia.api.mapper;
 
 import br.com.doceterapia.api.dto.ClienteRequestDTO;
-import br.com.doceterapia.api.dto.ClienteMetricasDTO;
+import br.com.doceterapia.api.dto.ClienteContagemDTO;
 import br.com.doceterapia.api.dto.ClienteResponseDTO;
 import br.com.doceterapia.api.dto.ClienteResumoResponseDTO;
 import br.com.doceterapia.api.entity.Cliente;
@@ -37,10 +37,9 @@ public class ClienteMapper{
         return dto;
     }
 
-    public static ClienteResumoResponseDTO toClienteResumoResponse(Cliente cliente, ClienteMetricasDTO metricas,
-                                                                   boolean incluirGasto) {
-        long totalPedidos = metricas == null ? 0 : metricas.totalPedidos();
-        BigDecimal gastoTotal = metricas == null ? BigDecimal.ZERO : metricas.gastoTotal();
+    public static ClienteResumoResponseDTO toClienteResumoResponse(Cliente cliente, ClienteContagemDTO contagem,
+                                                                   BigDecimal gastoTotal) {
+        long totalPedidos = contagem == null ? 0 : contagem.totalPedidos();
 
         return new ClienteResumoResponseDTO(
                 cliente.getIdCliente(),
@@ -53,7 +52,7 @@ public class ClienteMapper{
                 cliente.getStatus(),
                 cliente.getObservacao(),
                 totalPedidos,
-                incluirGasto ? gastoTotal : null,
-                metricas == null ? null : metricas.ultimoPedido());
+                gastoTotal,
+                contagem == null ? null : contagem.ultimoPedido());
     }
 }
