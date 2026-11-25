@@ -169,4 +169,22 @@ class PedidoServiceTest {
         assertEquals(StatusPedido.ESPERANDO_FAZER, pedido.getStatusPedido());
         verify(pedidoRepository, never()).save(pedido);
     }
+
+    @Test
+    @DisplayName("Edição mantém o status gravado mesmo com outro status no corpo")
+    void edicaoMantemStatusGravado() {
+        PedidoRequestDTO request = new PedidoRequestDTO();
+        request.setStatusPedido(StatusPedido.CANCELADO);
+        Pedido editado = new Pedido();
+        editado.setStatusPedido(StatusPedido.CANCELADO);
+        editado.setDataEntrega(LocalDate.of(2026, 11, 25));
+        when(bloqueioPedidoService.buscar(1)).thenReturn(pedido);
+        when(pedidoMapper.toPedido(request)).thenReturn(editado);
+
+        pedidoService.atualizar(1, request);
+
+        assertEquals(StatusPedido.ORCAMENTO, pedido.getStatusPedido());
+        assertEquals(LocalDate.of(2026, 11, 25), pedido.getDataEntrega());
+        verify(pedidoRepository).save(pedido);
+    }
 }
