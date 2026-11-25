@@ -209,7 +209,7 @@ A partir da raiz do repositório (`python` no Windows, `python3` no CI):
 
 ```bash
 # Regenera o demo. Quem muda o V1 ou uma entidade regenera no mesmo PR.
-python tools/fictitious-data/gerador.py --tamanho demo --semente 2026 --saida src/main/resources/db/demo/V1_1__demo_data.sql
+python tools/fictitious-data/gerador.py --tamanho demo --semente 2026 --com-saida-producao --saida src/main/resources/db/demo/V1_1__demo_data.sql
 
 # Gera o volume, imprime as contagens e falha se uma invariante for violada
 python tools/fictitious-data/gerador.py --tamanho volume --semente 2026 --data-referencia 2026-11-16 --saida target/fictitious-data/volume.sql --verificar
@@ -220,10 +220,8 @@ python -m unittest discover -s tools/fictitious-data -p "test_*.py"
 
 A mesma combinação de tamanho, semente e data de referência produz os mesmos bytes.
 
-`--com-saida-producao` acrescenta as movimentações `SAIDA_PRODUCAO`, com origem `PRODUCAO`, sem
-mudar o saldo final. Os enums `TipoMovimentacao` e `OrigemMovimentacao` ainda não têm esses
-valores: com a opção ligada, `GET /estoque/movimentos` responde 500 ao ler uma dessas linhas.
-Por isso o demo versionado não usa a opção.
+`--com-saida-producao` acrescenta as movimentações `SAIDA_PRODUCAO`, com origem `PRODUCAO`, dos
+pedidos que chegaram à produção, sem mudar o saldo final. O demo versionado usa a opção.
 
 ### Carregar o demo
 
